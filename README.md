@@ -13,6 +13,20 @@ local e calcular o ponto antípoda por meio de um job assíncrono.
 O frontend roda fora do Docker para preservar o HMR. Celery não precisa ser instalado
 nativamente no Windows.
 
+## Natural Earth
+
+Os dados espaciais não são baixados no startup nem enviados ao frontend. Baixe e extraia os
+quatro shapefiles 1:10m descritos em `data/README.md`. Depois da migration, importe-os com:
+
+```powershell
+docker compose run --rm -v ./data/natural_earth:/data/natural_earth:ro api `
+  python -m scripts.import_natural_earth /data/natural_earth
+```
+
+O importador valida os arquivos e o SRID, substitui os quatro conjuntos em uma única transação
+e pode ser executado novamente sem duplicar registros. Detalhes das consultas e medições estão
+em `docs/spatial.md`.
+
 ## Variáveis
 
 Veja `.env.example`. As principais são `DATABASE_URL`, `REDIS_URL`,
@@ -30,7 +44,7 @@ da API, execute `python -m scripts.export_openapi` dentro de `backend` e depois
 
 ## Estado desta etapa
 
-Implementado: globo MapLibre performático, seleção e marcador imediatos, reverse geocoding
-com cache/rate limit, PostGIS, migração, Celery/Redis, criação e consulta de jobs e antípoda
-testado. Pendente: importação efetiva do Natural Earth, terra/oceano, país/estado/cidade,
-terra firme mais próxima, animação, Three.js, terrain, autenticação e histórico complexo.
+Implementado: globo MapLibre performático, seleção e marcadores de origem/antípoda, reverse
+geocoding com cache/rate limit, PostGIS, Celery/Redis e análise real com Natural Earth para
+terra/oceano, país, estado, localidade e terra firme mais próxima. Pendente: animação,
+Three.js, terrain, autenticação e histórico complexo.

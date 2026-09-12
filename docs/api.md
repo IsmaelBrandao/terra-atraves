@@ -16,3 +16,18 @@ que compartilham o Redis. Latitude e longitude são validadas nos contratos.
 
 Estados de job: `QUEUED`, `PROCESSING`, `COMPLETED` e `FAILED`. A resposta HTTP usa os
 equivalentes em minúsculas.
+
+Quando concluído, `GET /drillings/{id}` inclui `destination.type` (`land` ou `ocean`), país,
+estado e localidade mais próxima. Para oceano, `destination.nearest_land` contém coordenadas,
+distância geodésica em quilômetros e país/localidade associados quando o dataset permite.
+Campos administrativos podem ser `null` em áreas disputadas, ilhas sem associação e países
+sem admin-1; isso não transforma o job em falha.
+
+Os contratos TypeScript não são mantidos manualmente. Após mudar schemas FastAPI:
+
+```powershell
+cd backend
+python -m scripts.export_openapi
+cd ../frontend
+npm run generate:api
+```

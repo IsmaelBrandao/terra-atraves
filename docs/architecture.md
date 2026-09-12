@@ -16,16 +16,17 @@ limite do servidor público em mais de uma instância da API.
 ## Perfuração
 
 O `POST` persiste o job e entrega o UUID ao Celery. O worker Linux lê a origem no PostGIS,
-calcula e persiste o antípoda e mantém progresso temporário no Redis. Não há `sleep` para
-simular processamento. Classificação terra/oceano, limites administrativos e lugar mais
-próximo dependem da futura importação do Natural Earth e permanecem explicitamente
-pendentes no estágio final atual.
+calcula o antípoda e executa a análise espacial no próprio banco: terra/oceano, país, estado,
+localidade e, no oceano, terra firme mais próxima. O resultado é persistido antes do estado
+`COMPLETED`; Redis mantém somente progresso temporário. Não há `sleep` nem dataset carregado
+em memória no worker.
 
 ## Dados geográficos
 
-PostGIS usa SRID 4326 e índices GiST para origem e antípoda. A próxima migração de dados
-criará tabelas separadas para land polygons, countries, states/provinces e populated places.
-O download será manual; `backend/scripts/import_natural_earth.py` nunca roda no startup.
+PostGIS usa SRID 4326. A migration `0003` cria tabelas separadas para land polygons,
+countries, states/provinces e populated places, com índices GiST em geometry e índices de
+KNN em geography onde há busca por distância. O download e a importação são explícitos;
+`backend/scripts/import_natural_earth.py` nunca roda no startup. Veja `docs/spatial.md`.
 
 ## Renderização futura
 
