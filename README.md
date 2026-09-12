@@ -1,7 +1,7 @@
 # Terra Através
 
-Aplicação acadêmica para explorar um globo 3D, selecionar uma coordenada, identificar o
-local e calcular o ponto antípoda por meio de um job assíncrono.
+Aplicação acadêmica para explorar um globo 3D, selecionar uma coordenada, calcular seu
+antípoda e acompanhar uma perfuração visual pelo interior da Terra.
 
 ## Executar
 
@@ -42,9 +42,16 @@ Frontend: execute `npm run lint`, `npm run typecheck` e `npm test`. Para atualiz
 da API, execute `python -m scripts.export_openapi` dentro de `backend` e depois
 `npm run generate:api` em `frontend`.
 
+## Experiência visual
+
+Depois que o job chega a `COMPLETED`, o botão `CAVAR` inicia a sequência visual. Three.js é
+baixado somente nesse momento. A experiência oferece pausa, continuação e cancelamento,
+adapta a geometria a dispositivos low-end e reduz a sequência quando o sistema solicita
+menos movimento. Arquitetura, proporções e medições estão em `docs/visual-experience.md`.
+
 ## Estado desta etapa
 
-Implementado: globo MapLibre performático, seleção e marcadores de origem/antípoda, reverse
-geocoding com cache/rate limit, PostGIS, Celery/Redis e análise real com Natural Earth para
-terra/oceano, país, estado, localidade e terra firme mais próxima. Pendente: animação,
-Three.js, terrain, autenticação e histórico complexo.
+Implementado: globo MapLibre performático, seleção e marcadores, reverse geocoding,
+PostGIS, Celery/Redis, análise Natural Earth e experiência procedural MapLibre + Three.js da
+origem ao antípoda. Permanecem fora do escopo: terrain, áudio, autenticação e histórico
+complexo.

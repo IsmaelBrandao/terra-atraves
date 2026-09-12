@@ -28,8 +28,13 @@ countries, states/provinces e populated places, com índices GiST em geometry e 
 KNN em geography onde há busca por distância. O download e a importação são explícitos;
 `backend/scripts/import_natural_earth.py` nunca roda no startup. Veja `docs/spatial.md`.
 
-## Renderização futura
+## Experiência visual
 
-Three.js não é dependência desta entrega. A animação futura deverá usar import dinâmico,
-preferencialmente uma `CustomLayer` que compartilhe o contexto WebGL do MapLibre, com
-`requestAnimationFrame` e `triggerRepaint`, sem estado React por frame.
+Ao clicar em `CAVAR`, o frontend importa dinamicamente a experiência e o Three.js. Uma
+`CustomLayerInterface` compartilha canvas, WebGL2 e matriz de projeção com MapLibre. O módulo
+procedural desenha as camadas internas e a trajetória reta origem-centro-antípoda, enquanto
+MapLibre continua dono da câmera. A máquina de estados comunica apenas transições semânticas
+ao React; progresso contínuo fica no `requestAnimationFrame` e em objetos Three.js.
+
+Conclusão e cancelamento removem a layer, descartam recursos Three.js e restauram câmera,
+projeção e controles. Veja `docs/visual-experience.md`.
