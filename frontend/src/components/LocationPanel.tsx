@@ -4,9 +4,18 @@ import { useExplorationStore } from "../store/exploration.store";
 const STAGE_LABELS: Record<string, string> = {
   queued: "Na fila",
   calculating_antipode: "Calculando antípoda",
-  antipode_calculated_geodata_pending: "Antípoda calculada",
+  classifying_destination: "Classificando destino",
+  resolving_region: "Identificando região",
+  finding_nearest_land: "Buscando terra firme",
+  completed: "Análise concluída",
   failed: "Falha no processamento",
 };
+
+function formatDistance(distanceKm: number) {
+  return distanceKm < 10
+    ? `${distanceKm.toFixed(1)} km`
+    : `${Math.round(distanceKm).toLocaleString("pt-BR")} km`;
+}
 
 function Coordinate({ label, value }: { label: string; value: number }) {
   return (
@@ -87,6 +96,59 @@ export function LocationPanel() {
               Antípoda: {drillingStatus.data.antipode.latitude.toFixed(4)}°, {" "}
               {drillingStatus.data.antipode.longitude.toFixed(4)}°
             </p>
+          )}
+          {drillingStatus.data.destination && (
+            <div className="mt-4 border-t border-white/10 pt-4 text-xs text-emerald-50/65">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="font-bold uppercase tracking-[0.14em] text-emerald-100/45">
+                  Destino
+                </span>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 font-bold text-white">
+                  {drillingStatus.data.destination.type === "land" ? "Terra" : "Oceano"}
+                </span>
+              </div>
+              {drillingStatus.data.destination.country && (
+                <p>
+                  <span className="text-emerald-100/40">País:</span>{" "}
+                  {drillingStatus.data.destination.country.name}
+                </p>
+              )}
+              {drillingStatus.data.destination.state && (
+                <p className="mt-1">
+                  <span className="text-emerald-100/40">Estado/região:</span>{" "}
+                  {drillingStatus.data.destination.state.name}
+                </p>
+              )}
+              {drillingStatus.data.destination.nearest_place && (
+                <p className="mt-1">
+                  <span className="text-emerald-100/40">Localidade mais próxima:</span>{" "}
+                  {drillingStatus.data.destination.nearest_place.name} · {" "}
+                  {formatDistance(drillingStatus.data.destination.nearest_place.distance_km)}
+                </p>
+              )}
+              {drillingStatus.data.destination.nearest_land && (
+                <div className="mt-3 rounded-lg bg-black/15 p-3">
+                  <p className="font-bold text-white">Terra firme mais próxima</p>
+                  <p className="mt-1 font-mono text-[11px]">
+                    {drillingStatus.data.destination.nearest_land.coordinates.latitude.toFixed(4)}°, {" "}
+                    {drillingStatus.data.destination.nearest_land.coordinates.longitude.toFixed(4)}°
+                  </p>
+                  <p className="mt-1">
+                    Distância: {formatDistance(drillingStatus.data.destination.nearest_land.distance_km)}
+                  </p>
+                  {drillingStatus.data.destination.nearest_land.country && (
+                    <p className="mt-1">
+                      País: {drillingStatus.data.destination.nearest_land.country.name}
+                    </p>
+                  )}
+                  {drillingStatus.data.destination.nearest_land.nearest_place && (
+                    <p className="mt-1">
+                      Localidade próxima: {drillingStatus.data.destination.nearest_land.nearest_place.name}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       ) : (

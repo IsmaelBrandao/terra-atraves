@@ -4,11 +4,14 @@ import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+import { useDrillingStatus } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
 import { configureMapLibreWorkers, detectGlobePerformance } from "./globe.performance";
 
 const MARKER_SOURCE = "selected-location";
 const MARKER_LAYER = "selected-location-dot";
+const ANTIPODE_SOURCE = "antipode-location";
+const ANTIPODE_LAYER = "antipode-location-dot";
 const EMPTY_POINT: FeatureCollection<Point> = {
   type: "FeatureCollection",
   features: [],
@@ -30,7 +33,9 @@ function pointFeature(longitude: number, latitude: number): FeatureCollection<Po
 export function GlobeMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const antipodeDataRef = useRef<FeatureCollection<Point>>(EMPTY_POINT);
   const selectPoint = useExplorationStore((state) => state.selectPoint);
+  const drillingStatus = useDrillingStatus();
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -73,6 +78,21 @@ export function GlobeMap() {
           "circle-stroke-width": 3,
         },
       });
+      map.addSource(ANTIPODE_SOURCE, {
+        type: "geojson",
+        data: antipodeDataRef.current,
+      });
+      map.addLayer({
+        id: ANTIPODE_LAYER,
+        type: "circle",
+        source: ANTIPODE_SOURCE,
+        paint: {
+          "circle-radius": 8,
+          "circle-color": "#67e8f9",
+          "circle-stroke-color": "#071411",
+          "circle-stroke-width": 3,
+        },
+      });
     };
     map.on("load", onLoad);
 
@@ -93,6 +113,15 @@ export function GlobeMap() {
       mapRef.current = null;
     };
   }, [selectPoint]);
+
+  useEffect(() => {
+    const antipode = drillingStatus.data?.antipode;
+    antipodeDataRef.current = antipode
+      ? pointFeature(antipode.longitude, antipode.latitude)
+      : EMPTY_POINT;
+    const source = mapRef.current?.getSource<GeoJSONSource>(ANTIPODE_SOURCE);
+    void source?.setData(antipodeDataRef.current);
+  }, [drillingStatus.data?.antipode]);
 
   return <div ref={containerRef} className="h-full w-full" aria-label="Globo terrestre interativo" />;
 }
