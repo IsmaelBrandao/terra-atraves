@@ -12,6 +12,15 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.core.config import get_settings
 from app.models.drilling import Drilling, DrillingStatus
 from app.services.antipode import calculate_antipode
+from app.services.spatial import (
+    ensure_spatial_data,
+    find_country,
+    find_nearest_land,
+    find_nearest_place,
+    find_state,
+    is_land,
+)
+from app.services.spatial.types import CountryInfo, PlaceInfo
 
 settings = get_settings()
 celery_app = Celery("terra_atraves", broker=settings.redis_url, backend=settings.redis_url)
@@ -24,6 +33,27 @@ async def set_progress(redis: Redis, drilling_id: uuid.UUID, progress: int, stag
         mapping={"progress": progress, "stage": stage},
     )
     await redis.expire(f"drilling:{drilling_id}:progress", 86400)
+
+
+def point(longitude: float, latitude: float) -> WKTElement:
+    return WKTElement(f"POINT({longitude} {latitude})", srid=4326)
+
+
+def store_country(drilling: Drilling, country: CountryInfo | None) -> None:
+    if country is None:
+        return
+    drilling.destination_country_name = country.name
+    drilling.destination_country_iso_a2 = country.iso_a2
+    drilling.destination_country_iso_a3 = country.iso_a3
+
+
+def store_nearest_place(drilling: Drilling, place_info: PlaceInfo | None) -> None:
+    if place_info is None:
+        return
+    drilling.nearest_place = place_info.name
+    drilling.nearest_place_country = place_info.country
+    drilling.nearest_place_point = point(place_info.longitude, place_info.latitude)
+    drilling.nearest_place_distance_m = place_info.distance_m
 
 
 async def run_drilling(drilling_id: uuid.UUID) -> None:
@@ -43,19 +73,75 @@ async def run_drilling(drilling_id: uuid.UUID) -> None:
 
             drilling = row[0]
             drilling.status = DrillingStatus.PROCESSING.value
-            drilling.progress = 20
+            drilling.progress = 10
             drilling.stage = "calculating_antipode"
             await session.commit()
-            await set_progress(redis, drilling_id, 20, drilling.stage)
+            await set_progress(redis, drilling_id, 10, drilling.stage)
 
             antipode = calculate_antipode(row.latitude, row.longitude)
-            drilling.antipode = WKTElement(
-                f"POINT({antipode.longitude} {antipode.latitude})", srid=4326
+            drilling.antipode = point(antipode.longitude, antipode.latitude)
+            drilling.progress = 30
+            drilling.stage = "classifying_destination"
+            await session.commit()
+            await set_progress(redis, drilling_id, 30, drilling.stage)
+
+            await ensure_spatial_data(session)
+            destination_is_land = await is_land(
+                session, antipode.latitude, antipode.longitude
             )
+            drilling.destination_is_land = destination_is_land
+            drilling.progress = 55
+            drilling.stage = (
+                "resolving_region" if destination_is_land else "finding_nearest_land"
+            )
+            await session.commit()
+            await set_progress(redis, drilling_id, 55, drilling.stage)
+
+            nearest_place = await find_nearest_place(
+                session, antipode.latitude, antipode.longitude
+            )
+            store_nearest_place(drilling, nearest_place)
+
+            if destination_is_land:
+                country = await find_country(session, antipode.latitude, antipode.longitude)
+                state = await find_state(session, antipode.latitude, antipode.longitude)
+                store_country(drilling, country)
+                if state is not None:
+                    drilling.destination_state_name = state.name
+                    drilling.destination_state_admin = state.admin
+                drilling.destination_label = country.name if country else "Terra"
+            else:
+                nearest_land = await find_nearest_land(
+                    session, antipode.latitude, antipode.longitude
+                )
+                drilling.destination_label = "Oceano"
+                if nearest_land is not None:
+                    drilling.nearest_land_point = point(
+                        nearest_land.longitude, nearest_land.latitude
+                    )
+                    drilling.nearest_land_distance_m = nearest_land.distance_m
+                    nearest_country = await find_country(
+                        session, nearest_land.latitude, nearest_land.longitude
+                    )
+                    if nearest_country is not None:
+                        drilling.nearest_land_country_name = nearest_country.name
+                        drilling.nearest_land_country_iso_a2 = nearest_country.iso_a2
+                        drilling.nearest_land_country_iso_a3 = nearest_country.iso_a3
+                    nearest_land_place = await find_nearest_place(
+                        session, nearest_land.latitude, nearest_land.longitude
+                    )
+                    if nearest_land_place is not None:
+                        drilling.nearest_land_place = nearest_land_place.name
+                        drilling.nearest_land_place_country = nearest_land_place.country
+                        drilling.nearest_land_place_point = point(
+                            nearest_land_place.longitude, nearest_land_place.latitude
+                        )
+                        drilling.nearest_land_place_distance_m = nearest_land_place.distance_m
+
             drilling.status = DrillingStatus.COMPLETED.value
             drilling.progress = 100
-            # Land/ocean and nearest-place stages require imported Natural Earth data.
-            drilling.stage = "antipode_calculated_geodata_pending"
+            drilling.stage = "completed"
+            drilling.error = None
             drilling.completed_at = datetime.now(UTC)
             await session.commit()
             await set_progress(redis, drilling_id, 100, drilling.stage)

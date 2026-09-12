@@ -194,6 +194,104 @@
         ],
         "title": "Coordinates"
       },
+      "CountryResult": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "iso_a2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iso A2"
+          },
+          "iso_a3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iso A3"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "iso_a2",
+          "iso_a3"
+        ],
+        "title": "CountryResult"
+      },
+      "DestinationResult": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "land",
+              "ocean"
+            ],
+            "title": "Type"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CountryResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nearest_place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nearest_land": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NearestLandResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "country",
+          "state",
+          "nearest_place",
+          "nearest_land"
+        ],
+        "title": "DestinationResult"
+      },
       "DrillingAccepted": {
         "properties": {
           "id": {
@@ -278,6 +376,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/Coordinates"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DestinationResult"
               },
               {
                 "type": "null"
@@ -376,6 +484,7 @@
           "stage",
           "origin",
           "antipode",
+          "destination",
           "origin_label",
           "destination_label",
           "destination_is_land",
@@ -399,6 +508,81 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "NearestLandResult": {
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/Coordinates"
+          },
+          "distance_km": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distance Km"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CountryResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nearest_place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinates",
+          "distance_km",
+          "country",
+          "nearest_place"
+        ],
+        "title": "NearestLandResult"
+      },
+      "PlaceResult": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "coordinates": {
+            "$ref": "#/components/schemas/Coordinates"
+          },
+          "distance_km": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distance Km"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "country",
+          "coordinates",
+          "distance_km"
+        ],
+        "title": "PlaceResult"
       },
       "ReverseGeocodingResponse": {
         "properties": {
@@ -439,6 +623,31 @@
           "cached"
         ],
         "title": "ReverseGeocodingResponse"
+      },
+      "StateResult": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "admin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "admin"
+        ],
+        "title": "StateResult"
       },
       "ValidationError": {
         "properties": {

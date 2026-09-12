@@ -9,3 +9,4 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 asyncio_mode = "auto"
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = ["spatial: requires imported Natural Earth data in PostGIS"]

@@ -7,6 +7,12 @@ from alembic import context
 from app.core.config import get_settings
 from app.db.base import Base
 from app.models.drilling import Drilling  # noqa: F401
+from app.models.natural_earth import (  # noqa: F401
+    NaturalEarthCountry,
+    NaturalEarthLand,
+    NaturalEarthPopulatedPlace,
+    NaturalEarthState,
+)
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

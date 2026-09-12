@@ -83,6 +83,27 @@ export interface components {
             /** Longitude */
             longitude: number;
         };
+        /** CountryResult */
+        CountryResult: {
+            /** Name */
+            name: string;
+            /** Iso A2 */
+            iso_a2: string | null;
+            /** Iso A3 */
+            iso_a3: string | null;
+        };
+        /** DestinationResult */
+        DestinationResult: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "land" | "ocean";
+            country: components["schemas"]["CountryResult"] | null;
+            state: components["schemas"]["StateResult"] | null;
+            nearest_place: components["schemas"]["PlaceResult"] | null;
+            nearest_land: components["schemas"]["NearestLandResult"] | null;
+        };
         /** DrillingAccepted */
         DrillingAccepted: {
             /**
@@ -119,6 +140,7 @@ export interface components {
             stage: string;
             origin: components["schemas"]["Coordinates"];
             antipode: components["schemas"]["Coordinates"] | null;
+            destination: components["schemas"]["DestinationResult"] | null;
             /** Origin Label */
             origin_label: string | null;
             /** Destination Label */
@@ -144,6 +166,24 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** NearestLandResult */
+        NearestLandResult: {
+            coordinates: components["schemas"]["Coordinates"];
+            /** Distance Km */
+            distance_km: number;
+            country: components["schemas"]["CountryResult"] | null;
+            nearest_place: components["schemas"]["PlaceResult"] | null;
+        };
+        /** PlaceResult */
+        PlaceResult: {
+            /** Name */
+            name: string;
+            /** Country */
+            country: string | null;
+            coordinates: components["schemas"]["Coordinates"];
+            /** Distance Km */
+            distance_km: number;
+        };
         /** ReverseGeocodingResponse */
         ReverseGeocodingResponse: {
             /** Latitude */
@@ -158,6 +198,13 @@ export interface components {
             };
             /** Cached */
             cached: boolean;
+        };
+        /** StateResult */
+        StateResult: {
+            /** Name */
+            name: string;
+            /** Admin */
+            admin: string | null;
         };
         /** ValidationError */
         ValidationError: {
