@@ -1,6 +1,6 @@
 import { DrillingTelemetry } from "../features/drilling-animation/DrillingTelemetry";
-import { useDrillingExperience } from "../features/drilling-animation/DrillingExperienceContext";
 import type { DrillingVisualState } from "../features/drilling-animation/drillingMachine";
+import { useDrillingExperience } from "../features/drilling-animation/useDrillingExperience";
 import { useCreateDrilling, useDrillingStatus, useReverseLocation } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
 

@@ -75,10 +75,10 @@ os renderizadores; nada deles participa da entrada inicial. O build validado ger
 | Artefato | Minificado | Gzip |
 | --- | ---: | ---: |
 | Entrada anterior à Fase 3 | 1.345,79 kB | 376,97 kB |
-| Entrada após a Fase 3 | 1.353,95 kB | 379,74 kB |
-| Chunk tardio da experiência/Three.js | 534,02 kB | 134,32 kB |
+| Entrada após a Fase 3 | 1.353,95 kB | 379,71 kB |
+| Chunk tardio da experiência/Three.js | 534,02 kB | 134,31 kB |
 
-O custo adicional gzip no caminho inicial foi 2,77 kB. O primeiro import dinâmico medido no
+O custo adicional gzip no caminho inicial foi 2,74 kB. O primeiro import dinâmico medido no
 servidor de desenvolvimento levou 175,3 ms.
 
 `NORMAL` usa 40 segmentos, transparência moderada e brilho central. `LOW_END` usa 20

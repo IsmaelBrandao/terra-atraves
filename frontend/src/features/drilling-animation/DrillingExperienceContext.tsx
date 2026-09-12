@@ -1,8 +1,6 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -13,6 +11,10 @@ import {
 import { useDrillingStatus } from "../../hooks/useLocation";
 import { detectGlobePerformance } from "../../map/globe.performance";
 import { useExplorationStore } from "../../store/exploration.store";
+import {
+  DrillingExperienceContext,
+  type DrillingExperienceContextValue,
+} from "./drillingExperience.context";
 import {
   isDrillingSequenceActive,
   type DrillingVisualState,
@@ -26,21 +28,6 @@ interface ExperienceController {
   cancel: () => void;
   dispose: () => void;
 }
-
-interface DrillingExperienceContextValue {
-  phase: DrillingVisualState;
-  canStart: boolean;
-  isActive: boolean;
-  qualityLevel: DrillingQualityLevel | null;
-  reducedMotion: boolean;
-  attachMap: (map: MapLibreMap | null) => void;
-  start: () => Promise<void>;
-  pause: () => void;
-  resume: () => void;
-  cancel: () => void;
-}
-
-const DrillingExperienceContext = createContext<DrillingExperienceContextValue | null>(null);
 
 export function DrillingExperienceProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<DrillingVisualState>("idle");
@@ -140,11 +127,4 @@ export function DrillingExperienceProvider({ children }: { children: ReactNode }
       {children}
     </DrillingExperienceContext.Provider>
   );
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useDrillingExperience(): DrillingExperienceContextValue {
-  const context = useContext(DrillingExperienceContext);
-  if (!context) throw new Error("DrillingExperienceProvider não encontrado");
-  return context;
 }

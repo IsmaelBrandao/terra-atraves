@@ -4,7 +4,7 @@ import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { useDrillingExperience } from "../features/drilling-animation/DrillingExperienceContext";
+import { useDrillingExperience } from "../features/drilling-animation/useDrillingExperience";
 import { useDrillingStatus } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
 import { configureMapLibreWorkers, detectGlobePerformance } from "./globe.performance";

@@ -23,7 +23,7 @@ O backend, o Redis e o worker são processos separados e não participam do rend
 ## Fase 3
 
 O build separa `DrillingExperience` e Three.js em um chunk tardio de 534,02 kB minificado e
-134,32 kB gzip. A entrada inicial passou de 376,97 kB para 379,74 kB gzip, aumento de 2,77 kB.
+134,31 kB gzip. A entrada inicial passou de 376,97 kB para 379,71 kB gzip, aumento de 2,74 kB.
 O primeiro carregamento dinâmico medido em desenvolvimento levou 175,3 ms.
 
 Em Chrome/Playwright com AMD Radeon via ANGLE/D3D11, a rotação automatizada mediu cerca de
