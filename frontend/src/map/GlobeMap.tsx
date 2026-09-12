@@ -4,6 +4,7 @@ import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+import { useDrillingExperience } from "../features/drilling-animation/DrillingExperienceContext";
 import { useDrillingStatus } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
 import { configureMapLibreWorkers, detectGlobePerformance } from "./globe.performance";
@@ -33,9 +34,16 @@ function pointFeature(longitude: number, latitude: number): FeatureCollection<Po
 export function GlobeMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const animationActiveRef = useRef(false);
   const antipodeDataRef = useRef<FeatureCollection<Point>>(EMPTY_POINT);
   const selectPoint = useExplorationStore((state) => state.selectPoint);
   const drillingStatus = useDrillingStatus();
+  const experience = useDrillingExperience();
+  const { attachMap, isActive } = experience;
+
+  useEffect(() => {
+    animationActiveRef.current = isActive;
+  }, [isActive]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -60,6 +68,7 @@ export function GlobeMap() {
       },
     });
     mapRef.current = map;
+    attachMap(map);
     let markerData = EMPTY_POINT;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
@@ -97,6 +106,7 @@ export function GlobeMap() {
     map.on("load", onLoad);
 
     const onClick = (event: MapMouseEvent) => {
+      if (animationActiveRef.current) return;
       const longitude = Number(event.lngLat.lng.toFixed(6));
       const latitude = Number(event.lngLat.lat.toFixed(6));
       markerData = pointFeature(longitude, latitude);
@@ -109,10 +119,11 @@ export function GlobeMap() {
     return () => {
       map.off("load", onLoad);
       map.off("click", onClick);
+      attachMap(null);
       map.remove();
       mapRef.current = null;
     };
-  }, [selectPoint]);
+  }, [attachMap, selectPoint]);
 
   useEffect(() => {
     const antipode = drillingStatus.data?.antipode;

@@ -1,3 +1,6 @@
+import { DrillingTelemetry } from "../features/drilling-animation/DrillingTelemetry";
+import { useDrillingExperience } from "../features/drilling-animation/DrillingExperienceContext";
+import type { DrillingVisualState } from "../features/drilling-animation/drillingMachine";
 import { useCreateDrilling, useDrillingStatus, useReverseLocation } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
 
@@ -9,6 +12,25 @@ const STAGE_LABELS: Record<string, string> = {
   finding_nearest_land: "Buscando terra firme",
   completed: "Análise concluída",
   failed: "Falha no processamento",
+};
+
+const VISUAL_STAGE_LABELS: Record<DrillingVisualState, string> = {
+  idle: "Pronto para cavar",
+  preparing: "Preparando a trajetória",
+  zooming_out: "Visão planetária",
+  showing_route: "Origem → centro → antípoda",
+  entering_earth: "Entrando na Terra",
+  crossing_crust: "Atravessando a crosta",
+  crossing_mantle: "Atravessando o manto",
+  crossing_outer_core: "Núcleo externo",
+  crossing_inner_core: "Núcleo interno",
+  crossing_center: "Centro da Terra · ≈ 6.371 km",
+  ascending: "Subindo para o outro lado",
+  exiting_earth: "Emergindo no destino",
+  revealing_destination: "Revelando o antípoda",
+  paused: "Experiência pausada",
+  completed: "Chegada concluída",
+  cancelled: "Experiência cancelada",
 };
 
 function formatDistance(distanceKm: number) {
@@ -33,6 +55,7 @@ export function LocationPanel() {
   const reverse = useReverseLocation();
   const drilling = useCreateDrilling();
   const drillingStatus = useDrillingStatus();
+  const experience = useDrillingExperience();
 
   if (!point) {
     return (
@@ -65,16 +88,24 @@ export function LocationPanel() {
         <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-amber-300 shadow-[0_0_18px_#fcd34d]" />
       </div>
 
-      <p className="mt-2 min-h-10 text-xs leading-5 text-emerald-50/50">
-        {reverse.isError
-          ? "Não foi possível identificar o endereço agora. As coordenadas continuam válidas."
-          : reverse.data?.display_name ?? "Consultando endereço…"}
-      </p>
+      {experience.isActive ? (
+        <p className="mt-2 font-mono text-[11px] text-emerald-50/50">
+          {point.latitude.toFixed(6)}° · {point.longitude.toFixed(6)}°
+        </p>
+      ) : (
+        <>
+          <p className="mt-2 min-h-10 text-xs leading-5 text-emerald-50/50">
+            {reverse.isError
+              ? "Não foi possível identificar o endereço agora. As coordenadas continuam válidas."
+              : reverse.data?.display_name ?? "Consultando endereço…"}
+          </p>
 
-      <div className="mt-5 grid grid-cols-2 gap-2">
-        <Coordinate label="Latitude" value={point.latitude} />
-        <Coordinate label="Longitude" value={point.longitude} />
-      </div>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <Coordinate label="Latitude" value={point.latitude} />
+            <Coordinate label="Longitude" value={point.longitude} />
+          </div>
+        </>
+      )}
 
       {drillingStatus.data ? (
         <div className="mt-5 rounded-xl border border-emerald-300/15 bg-emerald-300/[0.06] p-3">
@@ -97,7 +128,52 @@ export function LocationPanel() {
               {drillingStatus.data.antipode.longitude.toFixed(4)}°
             </p>
           )}
-          {drillingStatus.data.destination && (
+          {drillingStatus.data.status === "completed" && experience.phase !== "completed" && (
+            <div className="mt-4 border-t border-white/10 pt-4">
+              {experience.isActive ? (
+                <>
+                  <p className="text-center text-xs font-bold text-white" aria-live="polite">
+                    {VISUAL_STAGE_LABELS[experience.phase]}
+                  </p>
+                  <DrillingTelemetry />
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {experience.phase === "paused" ? (
+                      <button className="experience-secondary-button" onClick={experience.resume} aria-label="Continuar experiência">
+                        Continuar
+                      </button>
+                    ) : (
+                      <button className="experience-secondary-button" onClick={experience.pause} aria-label="Pausar experiência">
+                        Pausar
+                      </button>
+                    )}
+                    <button className="experience-secondary-button" onClick={experience.cancel} aria-label="Cancelar experiência">
+                      Cancelar
+                    </button>
+                  </div>
+                  <p className="mt-2 text-center text-[9px] uppercase tracking-[0.12em] text-emerald-100/35">
+                    {experience.qualityLevel === "LOW_END" ? "qualidade adaptativa" : "qualidade normal"}
+                  </p>
+                </>
+              ) : (
+                <>
+                  {experience.phase === "cancelled" && (
+                    <p className="mb-3 text-center text-xs text-emerald-50/55">
+                      A visualização foi encerrada. O resultado permanece disponível.
+                    </p>
+                  )}
+                  <button
+                    className="dig-button"
+                    onClick={() => void experience.start()}
+                    disabled={!experience.canStart}
+                    aria-label="Iniciar experiência de perfuração"
+                  >
+                    CAVAR
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          {drillingStatus.data.destination && experience.phase === "completed" && (
             <div className="mt-4 border-t border-white/10 pt-4 text-xs text-emerald-50/65">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <span className="font-bold uppercase tracking-[0.14em] text-emerald-100/45">
@@ -148,6 +224,13 @@ export function LocationPanel() {
                   )}
                 </div>
               )}
+              <button
+                className="experience-secondary-button mt-4 w-full"
+                onClick={() => void experience.start()}
+                aria-label="Repetir experiência de perfuração"
+              >
+                Repetir experiência
+              </button>
             </div>
           )}
         </div>

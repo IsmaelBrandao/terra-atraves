@@ -18,6 +18,12 @@
   .eyebrow {
     @apply text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/70;
   }
+  .dig-button {
+    @apply w-full rounded-xl bg-amber-300 px-4 py-3 text-sm font-extrabold tracking-[0.18em] text-[#14201b] transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .experience-secondary-button {
+    @apply rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-emerald-50 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200;
+  }
 }
 
 .maplibregl-map { background: radial-gradient(circle, #153d35 0%, #020707 75%); }
@@ -35,4 +41,13 @@
 @media (max-width: 639px) {
   .maplibregl-ctrl-top-right { top: 70px; }
   .maplibregl-ctrl-bottom-right { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
