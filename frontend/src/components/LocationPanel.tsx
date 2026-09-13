@@ -158,13 +158,15 @@ export function LocationPanel() {
                   )}
                   <DrillingTelemetry />
                   <div className="mt-3 flex gap-2">
-                    <button
-                      className="experience-secondary-button flex-1"
-                      onClick={experience.phase === "paused" ? experience.resume : experience.pause}
-                      aria-label={experience.phase === "paused" ? "Continuar experiência" : "Pausar experiência"}
-                    >
-                      {experience.phase === "paused" ? "Continuar" : "Pausar"}
-                    </button>
+                    {experience.phase !== "preparing" && (
+                      <button
+                        className="experience-secondary-button flex-1"
+                        onClick={experience.phase === "paused" ? experience.resume : experience.pause}
+                        aria-label={experience.phase === "paused" ? "Continuar experiência" : "Pausar experiência"}
+                      >
+                        {experience.phase === "paused" ? "Continuar" : "Pausar"}
+                      </button>
+                    )}
                     <button className="experience-secondary-button flex-1" onClick={experience.cancel} aria-label="Cancelar experiência">Cancelar</button>
                   </div>
                   <p className="mt-2 text-center text-[9px] text-emerald-100/35">

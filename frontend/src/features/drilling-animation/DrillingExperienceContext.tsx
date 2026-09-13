@@ -56,7 +56,6 @@ export function DrillingExperienceProvider({ children }: { children: ReactNode }
     if (!map || !point || !antipode || !canStart || loadingRef.current) return;
     loadingRef.current = true;
     controllerRef.current?.dispose();
-    setPhase("preparing");
 
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const quality = createDrillingQualityProfile(detectGlobePerformance());

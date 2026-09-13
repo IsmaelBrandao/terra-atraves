@@ -9,11 +9,7 @@ import {
   type DrillingVisualState,
 } from "./drillingMachine";
 import { createDrillingTimeline, sampleTimeline } from "./drillingTimeline";
-import {
-  EARTH_INTERIOR_LAYER_ID,
-  EarthInteriorLayer,
-  type GeographicPoint,
-} from "./layers/EarthInteriorLayer";
+import { EarthInteriorOverlay } from "./layers/EarthInteriorOverlay";
 import type { DrillingQualityProfile } from "./performance/qualityProfile";
 import { FrameLoop } from "./render/FrameLoop";
 
@@ -31,6 +27,11 @@ interface ToggleHandler {
   disable: () => void;
 }
 
+interface GeographicPoint {
+  latitude: number;
+  longitude: number;
+}
+
 export interface DrillingExperienceOptions {
   map: MapLibreMap;
   origin: GeographicPoint;
@@ -46,7 +47,7 @@ export class DrillingExperience {
   private readonly cameraSnapshot: CameraSnapshot;
   private readonly interactionSnapshot = new Map<ToggleHandler, boolean>();
   private machine: DrillingMachineSnapshot = { ...INITIAL_DRILLING_MACHINE };
-  private layer: EarthInteriorLayer | null = null;
+  private overlay: EarthInteriorOverlay | null = null;
   private lastTelemetryAt = -Infinity;
   private revealingStarted = false;
   private finished = false;
@@ -68,9 +69,12 @@ export class DrillingExperience {
     if (this.loop.isRunning || this.finished) return;
     this.captureAndDisableInteractions();
     this.options.map.stop();
-    this.options.map.setProjection({ type: "mercator" });
-    this.layer = new EarthInteriorLayer(this.options.origin, this.options.quality);
-    this.options.map.addLayer(this.layer);
+    this.options.map.setProjection({ type: "globe" });
+    this.moveToOrigin();
+    this.machine = transitionDrillingMachine(this.machine, { type: "ADVANCE", target: "preparing" });
+    this.options.onStateChange(this.machine.state);
+    this.overlay = new EarthInteriorOverlay(this.options.quality);
+    this.overlay.mount(this.options.map.getContainer());
     this.loop.start();
   }
 
@@ -95,7 +99,7 @@ export class DrillingExperience {
     this.options.map.stop();
     this.machine = transitionDrillingMachine(this.machine, { type: "CANCEL" });
     this.options.onStateChange(this.machine.state);
-    this.removeVisualLayer();
+    this.removeVisualOverlay();
     this.options.map.setProjection(this.cameraSnapshot.projection);
     this.restoreInteractions();
     this.options.map.easeTo({
@@ -110,7 +114,7 @@ export class DrillingExperience {
 
   dispose(): void {
     this.loop.cancel();
-    this.removeVisualLayer();
+    this.removeVisualOverlay();
     this.restoreInteractions();
     this.finished = true;
   }
@@ -126,7 +130,7 @@ export class DrillingExperience {
       this.handleSemanticState(this.machine.state);
     }
 
-    this.layer?.setProgress(sample.progress);
+    this.overlay?.setProgress(sample.progress);
     if (elapsedMs - this.lastTelemetryAt >= TELEMETRY_INTERVAL_MS || sample.completed) {
       this.dispatchTelemetry(sample.progress);
       this.lastTelemetryAt = elapsedMs;
@@ -144,23 +148,25 @@ export class DrillingExperience {
       this.options.map.easeTo({
         center: [this.options.origin.longitude, this.options.origin.latitude],
         offset: this.visualOffset(),
-        zoom: 0.75,
+        zoom: 0.85,
         bearing: 0,
-        pitch: 36,
-        duration: this.options.reducedMotion ? 0 : 1_300,
+        pitch: 0,
+        duration: this.options.reducedMotion ? 0 : 1_000,
       });
+    }
+    if (state === "showing_route") {
+      this.overlay?.show();
     }
     if (state === "revealing_destination" && !this.revealingStarted) {
       this.revealingStarted = true;
-      this.removeVisualLayer();
-      this.options.map.setProjection({ type: "globe" });
+      this.overlay?.hide();
       this.options.map.flyTo({
         center: [this.options.destination.longitude, this.options.destination.latitude],
         offset: this.visualOffset(),
         zoom: 3.2,
         bearing: 0,
         pitch: 0,
-        duration: this.options.reducedMotion ? 0 : 1_250,
+        duration: this.options.reducedMotion ? 0 : 1_050,
         essential: true,
       });
     }
@@ -168,18 +174,14 @@ export class DrillingExperience {
 
   private finish(): void {
     if (this.finished) return;
-    this.removeVisualLayer();
+    this.removeVisualOverlay();
     this.restoreInteractions();
     this.finished = true;
   }
 
-  private removeVisualLayer(): void {
-    if (this.options.map.getLayer(EARTH_INTERIOR_LAYER_ID)) {
-      this.options.map.removeLayer(EARTH_INTERIOR_LAYER_ID);
-    } else {
-      this.layer?.dispose();
-    }
-    this.layer = null;
+  private removeVisualOverlay(): void {
+    this.overlay?.dispose();
+    this.overlay = null;
   }
 
   private dispatchTelemetry(progress: number): void {
@@ -203,6 +205,17 @@ export class DrillingExperience {
     handlers.forEach((handler) => {
       this.interactionSnapshot.set(handler, handler.isEnabled());
       handler.disable();
+    });
+  }
+
+  private moveToOrigin(): void {
+    this.options.map.easeTo({
+      center: [this.options.origin.longitude, this.options.origin.latitude],
+      offset: this.visualOffset(),
+      zoom: 1.55,
+      bearing: 0,
+      pitch: 0,
+      duration: 0,
     });
   }
 
