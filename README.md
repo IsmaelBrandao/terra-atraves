@@ -34,6 +34,10 @@ Veja `.env.example`. As principais são `DATABASE_URL`, `REDIS_URL`,
 8000 estiver ocupada, altere `API_PORT` e a URL correspondente do frontend. Tiles são
 solicitados diretamente pelo navegador. Nenhum secret é mantido no código.
 
+O passo a passo de produção para Railway e Vercel está em `docs/deployment.md`. A carga do
+Natural Earth em produção é um bootstrap explícito e único; ela não faz parte do startup nem
+das migrations recorrentes.
+
 ## Qualidade e contratos
 
 Backend: instale `backend/requirements-dev.txt`, então execute `ruff check .` e `pytest`.
