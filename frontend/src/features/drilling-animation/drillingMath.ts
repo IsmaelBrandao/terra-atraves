@@ -20,9 +20,9 @@ export function depthAtProgress(progress: number): number {
 
 export function layerAtDepth(depthKm: number): EarthLayer {
   const depth = Math.min(EARTH_RADIUS_KM, Math.max(0, depthKm));
-  if (depth <= EARTH_LAYER_BOUNDARIES_KM.crust) return "Crosta";
-  if (depth <= EARTH_LAYER_BOUNDARIES_KM.mantle) return "Manto";
-  if (depth <= EARTH_LAYER_BOUNDARIES_KM.outerCore) return "Núcleo externo";
+  if (depth < EARTH_LAYER_BOUNDARIES_KM.crust) return "Crosta";
+  if (depth < EARTH_LAYER_BOUNDARIES_KM.mantle) return "Manto";
+  if (depth < EARTH_LAYER_BOUNDARIES_KM.outerCore) return "Núcleo externo";
   return "Núcleo interno";
 }
 

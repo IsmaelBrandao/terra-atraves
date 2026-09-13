@@ -121,7 +121,9 @@ export class DrillingExperience {
 
   private renderFrame(elapsedMs: number): boolean {
     const sample = sampleTimeline(this.timeline, elapsedMs);
+    let stateChanged = false;
     if (sample.state !== this.machine.state) {
+      stateChanged = true;
       this.machine = transitionDrillingMachine(this.machine, {
         type: "ADVANCE",
         target: sample.state,
@@ -130,8 +132,8 @@ export class DrillingExperience {
       this.handleSemanticState(this.machine.state);
     }
 
-    this.overlay?.setProgress(sample.progress);
-    if (elapsedMs - this.lastTelemetryAt >= TELEMETRY_INTERVAL_MS || sample.completed) {
+    this.overlay?.setProgress(sample.visualProgress, sample.progress);
+    if (stateChanged || elapsedMs - this.lastTelemetryAt >= TELEMETRY_INTERVAL_MS || sample.completed) {
       this.dispatchTelemetry(sample.progress);
       this.lastTelemetryAt = elapsedMs;
     }

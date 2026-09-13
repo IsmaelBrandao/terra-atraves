@@ -20,11 +20,6 @@ export class EarthInteriorOverlay {
   constructor(profile: DrillingQualityProfile) {
     this.earth = new EarthInteriorRenderer(profile);
     this.scene.add(this.earth.group, this.drill.group);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const light = new THREE.DirectionalLight(0xffe8bd, 1.9);
-    light.position.set(-2, 3, 4);
-    this.scene.add(light);
-
     this.camera.position.set(0, 0, 4);
     this.camera.lookAt(0, 0, 0);
 
@@ -38,7 +33,7 @@ export class EarthInteriorOverlay {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       alpha: true,
-      antialias: false,
+      antialias: profile.level !== "LOW_END",
       powerPreference: "high-performance",
     });
     this.renderer.setClearColor(0x000000, 0);
@@ -62,9 +57,9 @@ export class EarthInteriorOverlay {
     this.wrapper.classList.remove("drilling-cutaway-overlay--visible");
   }
 
-  setProgress(progress: number): void {
-    this.drill.setProgress(progress);
-    this.earth.setActiveLayer(telemetryAtProgress(progress).layer);
+  setProgress(visualProgress: number, physicalProgress: number): void {
+    this.drill.setProgress(visualProgress);
+    this.earth.setActiveLayer(telemetryAtProgress(physicalProgress).layer);
     this.render();
   }
 
@@ -83,7 +78,7 @@ export class EarthInteriorOverlay {
     const width = Math.max(1, host.clientWidth);
     const height = Math.max(1, host.clientHeight);
     const aspect = width / height;
-    const viewHeight = width < 640 ? Math.max(2.7, 2.55 / aspect) : 2.5;
+    const viewHeight = width < 640 ? Math.max(2.9, 2.55 / aspect) : 2.75;
     const viewWidth = viewHeight * aspect;
     this.camera.left = -viewWidth / 2;
     this.camera.right = viewWidth / 2;

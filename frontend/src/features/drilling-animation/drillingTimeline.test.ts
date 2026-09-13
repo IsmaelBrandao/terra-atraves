@@ -11,6 +11,7 @@ describe("drillingTimeline", () => {
     expect(sampleTimeline(timeline, timelineDuration(timeline))).toEqual({
       state: "completed",
       progress: 1,
+      visualProgress: 1,
       completed: true,
     });
   });
@@ -26,9 +27,9 @@ describe("drillingTimeline", () => {
     expect(timelineDuration(timeline)).toBe(620);
   });
 
-  it("keeps the complete sequence concise without rushing the center", () => {
+  it("keeps the complete sequence slow enough to read every layer", () => {
     const timeline = createDrillingTimeline(false);
-    expect(timelineDuration(timeline)).toBe(10_450);
-    expect(timeline.find((segment) => segment.state === "crossing_center")?.durationMs).toBe(750);
+    expect(timelineDuration(timeline)).toBe(18_700);
+    expect(timeline.find((segment) => segment.state === "crossing_center")?.durationMs).toBe(1_400);
   });
 });

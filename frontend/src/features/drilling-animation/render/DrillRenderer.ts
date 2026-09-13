@@ -8,67 +8,61 @@ const DESTINATION_X = 1.08;
 export class DrillRenderer {
   readonly group = new THREE.Group();
   private readonly probe: THREE.Mesh;
-  private readonly traversedPositions: THREE.BufferAttribute;
+  private readonly traversedRoute: THREE.Mesh;
   private readonly centerRing: THREE.Mesh;
 
   constructor() {
     this.group.name = "drill-route";
-    const route = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(ORIGIN_X, 0, 0),
-        new THREE.Vector3(DESTINATION_X, 0, 0),
-      ]),
-      new THREE.LineBasicMaterial({ color: 0x9fe6cf, transparent: true, opacity: 0.34 }),
+    const route = new THREE.Mesh(
+      new THREE.BoxGeometry(DESTINATION_X - ORIGIN_X, 0.008, 0.01),
+      new THREE.MeshBasicMaterial({ color: 0x9fe6cf, transparent: true, opacity: 0.42, depthTest: false }),
     );
+    route.position.z = 0.12;
     this.group.add(route);
 
-    const endpointGeometry = new THREE.SphereGeometry(0.025, 10, 6);
+    const endpointGeometry = new THREE.CircleGeometry(0.035, 20);
     const originMarker = new THREE.Mesh(
       endpointGeometry,
       new THREE.MeshBasicMaterial({ color: 0xf8d878 }),
     );
     originMarker.position.x = ORIGIN_X;
+    originMarker.position.z = 0.15;
     originMarker.name = "origem";
     const destinationMarker = new THREE.Mesh(
       endpointGeometry.clone(),
       new THREE.MeshBasicMaterial({ color: 0x67e8f9 }),
     );
     destinationMarker.position.x = DESTINATION_X;
+    destinationMarker.position.z = 0.15;
     destinationMarker.name = "antipoda";
     this.group.add(originMarker, destinationMarker);
 
-    const traversedGeometry = new THREE.BufferGeometry();
-    this.traversedPositions = new THREE.BufferAttribute(
-      new Float32Array([ORIGIN_X, 0, 0, ORIGIN_X, 0, 0]),
-      3,
+    this.traversedRoute = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 0.026, 0.025),
+      new THREE.MeshBasicMaterial({ color: 0xffe49a, transparent: true, opacity: 0.92, depthTest: false }),
     );
-    traversedGeometry.setAttribute("position", this.traversedPositions);
-    this.group.add(
-      new THREE.Line(
-        traversedGeometry,
-        new THREE.LineBasicMaterial({ color: 0xf8d878, transparent: true, opacity: 0.95 }),
-      ),
-    );
+    this.traversedRoute.position.z = 0.14;
+    this.group.add(this.traversedRoute);
 
     this.probe = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.025, 0.06, 3, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffe49a }),
+      new THREE.CapsuleGeometry(0.04, 0.11, 4, 12),
+      new THREE.MeshBasicMaterial({ color: 0x67e8f9, depthTest: false }),
     );
     this.probe.rotation.z = Math.PI / 2;
+    this.probe.position.z = 0.2;
     this.probe.name = "sonda";
     const probeHalo = new THREE.Mesh(
-      new THREE.RingGeometry(0.052, 0.067, 16),
-      new THREE.MeshBasicMaterial({ color: 0xffe49a, transparent: true, opacity: 0.45, side: THREE.DoubleSide }),
+      new THREE.RingGeometry(0.07, 0.09, 24),
+      new THREE.MeshBasicMaterial({ color: 0xcffafe, transparent: true, opacity: 0.65, depthTest: false, side: THREE.DoubleSide }),
     );
-    probeHalo.rotation.y = Math.PI / 2;
     this.probe.add(probeHalo);
     this.group.add(this.probe);
 
     this.centerRing = new THREE.Mesh(
       new THREE.TorusGeometry(0.115, 0.012, 8, 28),
-      new THREE.MeshBasicMaterial({ color: 0xfff1bd, transparent: true, opacity: 0.4 }),
+      new THREE.MeshBasicMaterial({ color: 0xa5f3fc, transparent: true, opacity: 0.28, depthTest: false }),
     );
-    this.centerRing.rotation.x = Math.PI / 2;
+    this.centerRing.position.z = 0.16;
     this.group.add(this.centerRing);
     this.setProgress(0);
   }
@@ -77,12 +71,13 @@ export class DrillRenderer {
     const normalized = clampProgress(progress);
     const x = ORIGIN_X + (DESTINATION_X - ORIGIN_X) * normalized;
     this.probe.position.x = x;
-    this.traversedPositions.setXYZ(1, x, 0, 0);
-    this.traversedPositions.needsUpdate = true;
+    const traversedLength = Math.max(0.001, x - ORIGIN_X);
+    this.traversedRoute.scale.x = traversedLength;
+    this.traversedRoute.position.x = ORIGIN_X + traversedLength / 2;
     const centerProximity = Math.max(0, 1 - Math.abs(normalized - 0.5) * 14);
-    const scale = 1 + centerProximity * 1.2;
+    const scale = 1 + centerProximity * 0.35;
     this.centerRing.scale.setScalar(scale);
     const material = this.centerRing.material as THREE.MeshBasicMaterial;
-    material.opacity = 0.28 + centerProximity * 0.68;
+    material.opacity = 0.12 + centerProximity * 0.48;
   }
 }
