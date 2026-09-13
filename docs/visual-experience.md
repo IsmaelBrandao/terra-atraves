@@ -110,7 +110,7 @@ Finalizar ou cancelar executa:
 
 Não é usado `forceContextLoss()`, pois o contexto pertence ao MapLibre. Na Fase 4, dez ciclos
 completos foram executados na mesma SPA. Após aquecimento e coleta de lixo forçada, o heap
-ficou entre 23,19 MB e 24,89 MB, com variações intermediárias e delta líquido de 1,70 MB.
+ficou entre 24,04 MB e 25,47 MB, com variações intermediárias e delta líquido de 1,31 MB.
 Não houve crescimento estritamente monotônico e restou um único canvas.
 
 ## Medição no navegador

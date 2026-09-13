@@ -63,7 +63,7 @@ e medição de labels. React não apareceu entre os oito maiores consumidores. U
 antes da compilação para o feedback visual aparecer sem disputar o primeiro frame da viagem.
 
 Após aquecimento, dez ciclos completos na mesma SPA e coleta explícita entre amostras
-registraram 23,19–24,89 MB, delta líquido de 1,70 MB. A série teve quedas intermediárias e
+registraram 24,04–25,47 MB, delta líquido de 1,31 MB. A série teve quedas intermediárias e
 estabilização gradual, sem crescimento estritamente monotônico. Havia um único canvas
 MapLibre no fim. O teste E2E também confirmou zero chamadas à API durante pan/zoom.
 
