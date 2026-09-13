@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
+    "test:e2e": "playwright test --grep-invert @profile",
+    "test:profile": "playwright test --grep @profile",
     "generate:api": "openapi-typescript openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {
@@ -20,7 +22,9 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.19.0",
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.2.0",
     "@types/geojson": "^7946.0.16",
