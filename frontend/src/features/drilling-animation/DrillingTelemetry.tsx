@@ -27,9 +27,14 @@ function stageLabel(phase: DrillingVisualState, telemetry: Telemetry): string {
   return STATIC_STAGE_LABELS[phase] ?? telemetry.layer.toUpperCase();
 }
 
+/**
+ * Minimal readout: layer, depth and the distance that matters now. Values are written straight
+ * to the DOM from the throttled telemetry event — React only re-renders on phase changes.
+ */
 export function DrillingTelemetry({ phase }: { phase: DrillingVisualState }) {
   const stageRef = useRef<HTMLParagraphElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
+  const progressBarRef = useRef<HTMLSpanElement>(null);
   const depthRef = useRef<HTMLSpanElement>(null);
   const layerRef = useRef<HTMLSpanElement>(null);
   const remainingRef = useRef<HTMLParagraphElement>(null);
@@ -42,6 +47,7 @@ export function DrillingTelemetry({ phase }: { phase: DrillingVisualState }) {
       if (progressRef.current) {
         progressRef.current.textContent = `${progressFormatter.format(telemetry.progress * 100)}%`;
       }
+      if (progressBarRef.current) progressBarRef.current.style.transform = `scaleX(${telemetry.progress})`;
       if (depthRef.current) depthRef.current.textContent = `${numberFormatter.format(telemetry.depthKm)} km`;
       if (layerRef.current) layerRef.current.textContent = telemetry.layer;
       if (remainingRef.current) {
@@ -60,36 +66,24 @@ export function DrillingTelemetry({ phase }: { phase: DrillingVisualState }) {
   }, [phase]);
 
   return (
-    <>
-      <p ref={stageRef} className="stage-label" aria-live="polite">
+    <div className="telemetry" aria-label="Dados da trajetória">
+      <p ref={stageRef} className="telemetry__stage" aria-live="polite">
         {stageLabel(phase, latestTelemetryRef.current)}
       </p>
-      {phase === "crossing_center" && (
-        <p className="mt-1 text-center font-mono text-[11px] text-amber-100/70">6.371 km</p>
-      )}
-      <div className="mt-4 grid grid-cols-3 gap-2" aria-label="Dados da trajetória">
-        <div className="rounded-lg bg-black/20 p-2.5">
-          <span className="block text-[8px] font-bold uppercase tracking-[0.13em] text-emerald-100/40">
-            Progresso
-          </span>
-          <span ref={progressRef} data-testid="drilling-progress" className="mt-1 block font-mono text-xs text-white">0,0%</span>
-        </div>
-        <div className="rounded-lg bg-black/20 p-2.5">
-          <span className="block text-[8px] font-bold uppercase tracking-[0.13em] text-emerald-100/40">
-            Profundidade
-          </span>
-          <span ref={depthRef} data-testid="drilling-depth" className="mt-1 block font-mono text-xs text-white">0 km</span>
-        </div>
-        <div className="rounded-lg bg-black/20 p-2.5">
-          <span className="block text-[8px] font-bold uppercase tracking-[0.13em] text-emerald-100/40">
-            Camada
-          </span>
-          <span ref={layerRef} data-testid="drilling-layer" className="mt-1 block text-xs font-semibold leading-tight text-white">Crosta</span>
-        </div>
-        <p ref={remainingRef} className="col-span-3 text-center text-[11px] text-emerald-50/55">
-          6.371 km até o centro
-        </p>
-      </div>
-    </>
+      <p className="telemetry__depth">
+        <span ref={depthRef} data-testid="drilling-depth">0 km</span>
+        <span className="sr-only"> de profundidade</span>
+      </p>
+      <p ref={remainingRef} className="telemetry__remaining">
+        6.371 km até o centro
+      </p>
+      <span className="telemetry__track" aria-hidden="true">
+        <span ref={progressBarRef} className="telemetry__bar" />
+      </span>
+      <span className="sr-only">
+        Progresso <span ref={progressRef} data-testid="drilling-progress">0,0%</span>, camada{" "}
+        <span ref={layerRef} data-testid="drilling-layer">Crosta</span>
+      </span>
+    </div>
   );
 }

@@ -5,7 +5,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Manrope", "Segoe UI", "sans-serif"],
-        display: ["Georgia", "serif"],
+        display: ["Instrument Serif", "Georgia", "serif"],
       },
     },
   },

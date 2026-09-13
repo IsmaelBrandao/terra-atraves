@@ -4,12 +4,6 @@ export interface GlobePerformanceProfile {
   pixelRatio: number;
 }
 
-export function getInitialGlobeZoom(viewportWidth: number): number {
-  if (viewportWidth >= 1600) return 2.1;
-  if (viewportWidth >= 768) return 1.7;
-  return 1.35;
-}
-
 interface NavigatorWithMemory extends Navigator {
   deviceMemory?: number;
 }

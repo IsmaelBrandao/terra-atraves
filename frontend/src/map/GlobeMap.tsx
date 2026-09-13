@@ -7,7 +7,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useDrillingExperience } from "../features/drilling-animation/useDrillingExperience";
 import { useDrillingStatus } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
-import { configureMapLibreWorkers, detectGlobePerformance, getInitialGlobeZoom } from "./globe.performance";
+import { useUiStore } from "../store/ui.store";
+import { configureMapLibreWorkers, detectGlobePerformance } from "./globe.performance";
+import { resolveInitialGlobeView } from "./initialView";
+import { trackMapReadiness } from "./mapReadiness";
 
 const MARKER_SOURCE = "selected-location";
 const MARKER_LAYER = "selected-location-dot";
@@ -41,6 +44,7 @@ export function GlobeMap() {
   const [renderError, setRenderError] = useState(false);
   const selectedPoint = useExplorationStore((state) => state.selectedPoint);
   const selectPoint = useExplorationStore((state) => state.selectPoint);
+  const setMapStatus = useUiStore((state) => state.setMapStatus);
   const drillingStatus = useDrillingStatus();
   const experience = useDrillingExperience();
   const { attachMap, isActive } = experience;
@@ -54,11 +58,13 @@ export function GlobeMap() {
 
     if (typeof window.WebGL2RenderingContext === "undefined") {
       setRenderError(true);
+      setMapStatus("failed");
       return;
     }
 
     const profile = detectGlobePerformance();
     configureMapLibreWorkers(profile, maplibregl);
+    const initialView = resolveInitialGlobeView(window.location.search, window.innerWidth, window.innerHeight);
     let map: maplibregl.Map;
     try {
       map = new maplibregl.Map({
@@ -66,8 +72,8 @@ export function GlobeMap() {
         style:
           import.meta.env.VITE_MAP_STYLE_URL ??
           "https://tiles.openfreemap.org/styles/liberty",
-        center: [-38.5267, -3.7319],
-        zoom: getInitialGlobeZoom(window.innerWidth),
+        center: initialView.center,
+        zoom: initialView.zoom,
         maxZoom: 19,
         maxPitch: 60,
         pixelRatio: profile.pixelRatio,
@@ -81,15 +87,21 @@ export function GlobeMap() {
     } catch (error) {
       console.error("Não foi possível inicializar a visualização 3D", error);
       setRenderError(true);
+      setMapStatus("failed");
       return;
     }
     mapRef.current = map;
+    const stopReadinessTracking = trackMapReadiness(map, { onStatus: setMapStatus });
     attachMap(map);
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
 
     const onLoad = () => {
       map.setProjection({ type: "globe" });
+      // Thin atmosphere halo around the globe; fades out as the camera gets close to the ground.
+      map.setSky({
+        "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.32, 3, 0.26, 6, 0],
+      });
       map.addSource(MARKER_SOURCE, { type: "geojson", data: selectedPointDataRef.current });
       map.addLayer({
         id: MARKER_HALO_LAYER,
@@ -97,8 +109,8 @@ export function GlobeMap() {
         source: MARKER_SOURCE,
         paint: {
           "circle-radius": 17,
-          "circle-color": "#f7c95c",
-          "circle-opacity": 0.16,
+          "circle-color": "#f5c86a",
+          "circle-opacity": 0.18,
           "circle-stroke-width": 0,
         },
       });
@@ -108,8 +120,8 @@ export function GlobeMap() {
         source: MARKER_SOURCE,
         paint: {
           "circle-radius": 9,
-          "circle-color": "#f7c95c",
-          "circle-stroke-color": "#071411",
+          "circle-color": "#f5c86a",
+          "circle-stroke-color": "#02040a",
           "circle-stroke-width": 3,
         },
       });
@@ -123,8 +135,8 @@ export function GlobeMap() {
         source: ANTIPODE_SOURCE,
         paint: {
           "circle-radius": 8,
-          "circle-color": "#67e8f9",
-          "circle-stroke-color": "#071411",
+          "circle-color": "#7fe3f2",
+          "circle-stroke-color": "#02040a",
           "circle-stroke-width": 3,
         },
       });
@@ -138,22 +150,34 @@ export function GlobeMap() {
       selectPoint({ longitude, latitude });
     };
     map.on("click", onClick);
+    const container = containerRef.current;
+    const onMoveEnd = () => {
+      const center = map.getCenter();
+      container.dataset.centerLng = center.lng.toFixed(4);
+      container.dataset.centerLat = center.lat.toFixed(4);
+      container.dataset.zoom = map.getZoom().toFixed(2);
+    };
+    onMoveEnd();
+    map.on("moveend", onMoveEnd);
     const canvas = map.getCanvas();
     const onContextLost = (event: Event) => {
       event.preventDefault();
       setRenderError(true);
+      setMapStatus("failed");
     };
     canvas.addEventListener("webglcontextlost", onContextLost);
 
     return () => {
+      stopReadinessTracking();
       map.off("load", onLoad);
       map.off("click", onClick);
+      map.off("moveend", onMoveEnd);
       canvas.removeEventListener("webglcontextlost", onContextLost);
       attachMap(null);
       map.remove();
       mapRef.current = null;
     };
-  }, [attachMap, selectPoint]);
+  }, [attachMap, selectPoint, setMapStatus]);
 
   useEffect(() => {
     selectedPointDataRef.current = selectedPoint
@@ -176,14 +200,14 @@ export function GlobeMap() {
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" aria-label="Globo terrestre interativo" />
       {renderError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#071411] px-6 text-center" role="alert">
-          <div className="max-w-md rounded-2xl border border-white/10 bg-[#0b1c18] p-6">
-            <p className="eyebrow">Visualização indisponível</p>
-            <h2 className="mt-3 text-xl font-bold text-white">Não foi possível abrir o globo 3D</h2>
-            <p className="mt-2 text-sm leading-6 text-emerald-50/60">
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center" role="alert">
+          <div className="max-w-md">
+            <p className="panel-kicker justify-center">Visualização indisponível</p>
+            <h2 className="mt-3 font-display text-3xl text-white">Não foi possível abrir o globo 3D</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300/70">
               Seu navegador ou dispositivo não conseguiu inicializar a visualização 3D. Verifique se a aceleração de hardware está ativa e recarregue a página.
             </p>
-            <button className="experience-secondary-button mt-5" onClick={() => window.location.reload()}>
+            <button type="button" className="dock-button mt-6" onClick={() => window.location.reload()}>
               Tentar novamente
             </button>
           </div>
