@@ -2,8 +2,9 @@
 
 ## Fluxo interativo
 
-O navegador baixa estilo e tiles diretamente do OpenFreeMap. Um clique atualiza a source
-GeoJSON do marcador imediatamente e grava apenas o ponto selecionado no Zustand. Em
+O navegador baixa estilo e tiles diretamente do OpenFreeMap. Um clique grava apenas o ponto
+selecionado no Zustand e um efeito atualiza a source GeoJSON já existente do marcador e de
+seu halo. Selecionar novamente substitui os dados; sources e layers nunca são acumuladas. Em
 seguida, o TanStack Query solicita reverse geocoding à API. Navegar no globo não dispara
 requests nem renderizações React.
 
@@ -30,7 +31,8 @@ KNN em geography onde há busca por distância. O download e a importação são
 
 ## Experiência visual
 
-Ao clicar em `CAVAR`, o frontend importa dinamicamente a experiência e o Three.js. Uma
+Após a primeira seleção, `requestIdleCallback` (com fallback de 750 ms) prepara o chunk da
+experiência sem instanciar Three.js. Ao clicar em `CAVAR`, o módulo cacheado é usado. Uma
 `CustomLayerInterface` compartilha canvas, WebGL2 e matriz de projeção com MapLibre. O módulo
 procedural desenha as camadas internas e a trajetória reta origem-centro-antípoda, enquanto
 MapLibre continua dono da câmera. A máquina de estados comunica apenas transições semânticas
@@ -38,3 +40,7 @@ ao React; progresso contínuo fica no `requestAnimationFrame` e em objetos Three
 
 Conclusão e cancelamento removem a layer, descartam recursos Three.js e restauram câmera,
 projeção e controles. Veja `docs/visual-experience.md`.
+
+O mapa continua sendo criado uma única vez. A ação “Escolher outro local” limpa o Zustand e
+as sources, mas preserva a instância MapLibre. Falha de suporte a WebGL2, exceção na criação
+do mapa ou perda do contexto exibem um fallback textual recuperável em vez de tela vazia.

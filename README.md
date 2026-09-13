@@ -38,14 +38,16 @@ solicitados diretamente pelo navegador. Nenhum secret é mantido no código.
 
 Backend: instale `backend/requirements-dev.txt`, então execute `ruff check .` e `pytest`.
 
-Frontend: execute `npm run lint`, `npm run typecheck` e `npm test`. Para atualizar os tipos
+Frontend: execute `npm run lint`, `npm run typecheck`, `npm test` e `npm run test:e2e`.
+O perfil reproduzível, mais demorado, roda com `npm run test:profile`. Para atualizar os tipos
 da API, execute `python -m scripts.export_openapi` dentro de `backend` e depois
 `npm run generate:api` em `frontend`.
 
 ## Experiência visual
 
-Depois que o job chega a `COMPLETED`, o botão `CAVAR` inicia a sequência visual. Three.js é
-baixado somente nesse momento. A experiência oferece pausa, continuação e cancelamento,
+Depois que o job chega a `COMPLETED`, o botão `CAVAR` inicia a sequência visual. Three.js
+permanece fora do bundle inicial e seu chunk é preparado em tempo ocioso após a seleção. A
+experiência oferece pausa, continuação, cancelamento, repetição e escolha de outro local,
 adapta a geometria a dispositivos low-end e reduz a sequência quando o sistema solicita
 menos movimento. Arquitetura, proporções e medições estão em `docs/visual-experience.md`.
 
@@ -55,3 +57,7 @@ Implementado: globo MapLibre performático, seleção e marcadores, reverse geoc
 PostGIS, Celery/Redis, análise Natural Earth e experiência procedural MapLibre + Three.js da
 origem ao antípoda. Permanecem fora do escopo: terrain, áudio, autenticação e histórico
 complexo.
+
+A interface foi validada em 1920×1080, 1366×768, 1024×768, 390×844 e 360×800. Há
+tratamento para falhas de WebGL, geocodificação, criação e consulta do job e timeout. Decisões
+de UX e limitações estão em `docs/ux.md`.

@@ -27,7 +27,7 @@ crossing_mantle → crossing_outer_core → crossing_inner_core → crossing_cen
 → exiting_earth → revealing_destination → completed`.
 
 `paused` guarda o estado de retomada e `cancelled` é terminal para aquela execução. A
-timeline normal dura aproximadamente 12,4 segundos. `FrameLoop` usa somente
+timeline normal dura 10,45 segundos; o centro recebe 750 ms para permanecer legível. `FrameLoop` usa somente
 `requestAnimationFrame`; pausa e cancelamento removem o frame pendente. Cada frame altera
 objetos Three.js e chama `triggerRepaint()`. React recebe somente mudanças de estado. A
 telemetria é emitida no máximo a cada 125 ms e atualiza referências DOM diretamente.
@@ -54,7 +54,9 @@ Limites de cálculo simplificados:
 
 ## Representação visual
 
-As esferas são geradas proceduralmente, sem modelos ou texturas. Os raios visuais são:
+As esferas são geradas proceduralmente, sem modelos ou texturas. Crosta em malha, manto
+facetado, núcleos sólidos e contornos geométricos separam as regiões sem depender apenas de
+cor. A sonda usa uma cápsula abstrata com halo simples. Os raios visuais são:
 
 | Superfície | Raio relativo |
 | --- | ---: |
@@ -69,17 +71,21 @@ ambiente mais uma luz direcional, sem sombras, pós-processamento, bloom ou part
 
 ## Lazy loading e qualidade
 
-O clique em `CAVAR` executa `import("./DrillingExperience")`. Esse módulo carrega Three.js e
-os renderizadores; nada deles participa da entrada inicial. O build validado gerou:
+Depois da primeira seleção, o navegador agenda o `import("./DrillingExperience")` em idle.
+Isso prepara o chunk sem criar scene, renderer ou geometrias. `CAVAR` usa a promise cacheada,
+cede um frame para mostrar `PREPARING` e só então cria a layer. O build validado gerou:
 
 | Artefato | Minificado | Gzip |
 | --- | ---: | ---: |
 | Entrada anterior à Fase 3 | 1.345,79 kB | 376,97 kB |
 | Entrada após a Fase 3 | 1.353,95 kB | 379,71 kB |
 | Chunk tardio da experiência/Three.js | 534,02 kB | 134,31 kB |
+| Entrada após a Fase 4 | 1.356,61 kB | 380,75 kB |
+| Chunk 3D após a Fase 4 | 536,87 kB | 135,07 kB |
 
-O custo adicional gzip no caminho inicial foi 2,74 kB. O primeiro import dinâmico medido no
-servidor de desenvolvimento levou 175,3 ms.
+O custo adicional gzip no caminho inicial da Fase 4 foi 1,04 kB. O primeiro import dinâmico
+medido no servidor de desenvolvimento levou 175,3 ms antes do preload e 7,3–12,4 ms depois.
+A compilação de materiais ocorre em `PREPARING`.
 
 `NORMAL` usa 40 segmentos, transparência moderada e brilho central. `LOW_END` usa 20
 segmentos, menor transparência e remove o brilho decorativo. A detecção reutiliza o perfil
@@ -102,10 +108,10 @@ Finalizar ou cancelar executa:
 - restauração dos handlers, projeção e câmera;
 - remoção dos listeners DOM pelo ciclo React.
 
-Não é usado `forceContextLoss()`, pois o contexto pertence ao MapLibre. Mais de cinco ciclos
-foram executados na mesma SPA. Após aquecimento e coleta de lixo forçada, as amostras ficaram
-entre 58,4 MB e 59,4 MB; houve uma queda de 1,78 MB em um ciclo e aumento de 0,93 MB no
-seguinte, sem crescimento monotônico.
+Não é usado `forceContextLoss()`, pois o contexto pertence ao MapLibre. Na Fase 4, dez ciclos
+completos foram executados na mesma SPA. Após aquecimento e coleta de lixo forçada, o heap
+ficou entre 23,19 MB e 24,89 MB, com variações intermediárias e delta líquido de 1,70 MB.
+Não houve crescimento estritamente monotônico e restou um único canvas.
 
 ## Medição no navegador
 
@@ -116,12 +122,12 @@ Chrome/Playwright em Windows, WebGL2 por ANGLE/D3D11 sobre AMD Radeon Graphics:
 | Rotação conduzida pela automação | 37,5 | 0 |
 | Sequência visual completa | 48,4 | 1 de 89 ms |
 
-A sequência completa medida durou 12.457,7 ms. Os números incluem a sobrecarga do navegador
+A sequência atual dura aproximadamente 10.450 ms. Os números incluem a sobrecarga do navegador
 automatizado e da geração sintética de entrada; não substituem profiling em aparelhos reais.
 
 ## Responsividade, acessibilidade e limitações
 
-Em mobile, o painel tem altura limitada, rolagem própria e conteúdo compacto durante a
+Em mobile, o painel tem altura limitada a 52% da viewport, rolagem própria com contenção e conteúdo compacto durante a
 sequência. Os controles possuem nomes acessíveis, não dependem de hover, e o estado semântico
 usa `aria-live`. Camadas são identificadas por texto, não apenas por cor.
 
@@ -130,3 +136,7 @@ procedural fica ancorada à posição da origem em coordenadas do mapa, mas a tr
 é uma visualização abstrata do diâmetro. FPS e memória variam conforme GPU, driver, tiles e
 tamanho da viewport. Não foram adicionados terrain, áudio, partículas, prédios 3D ou efeitos
 de pós-processamento.
+
+O resultado é revelado somente após a chegada, primeiro com nome, coordenadas e terra/oceano,
+depois com região, localidade e terra firme próxima quando existentes. O usuário pode repetir
+a mesma trajetória ou limpar a seleção sem recriar o mapa.
