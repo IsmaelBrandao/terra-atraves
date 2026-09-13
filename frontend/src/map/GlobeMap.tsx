@@ -8,6 +8,7 @@ import { useDrillingExperience } from "../features/drilling-animation/useDrillin
 import { useDrillingStatus } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
 import { configureMapLibreWorkers, detectGlobePerformance, getInitialGlobeZoom } from "./globe.performance";
+import { enforceGlobeProjection, watchGlobeProjection } from "./globe.projection";
 
 const MARKER_SOURCE = "selected-location";
 const MARKER_LAYER = "selected-location-dot";
@@ -68,6 +69,7 @@ export function GlobeMap() {
           "https://tiles.openfreemap.org/styles/liberty",
         center: [-38.5267, -3.7319],
         zoom: getInitialGlobeZoom(window.innerWidth),
+        renderWorldCopies: false,
         maxZoom: 19,
         maxPitch: 60,
         pixelRatio: profile.pixelRatio,
@@ -84,12 +86,13 @@ export function GlobeMap() {
       return;
     }
     mapRef.current = map;
+    const stopWatchingGlobeProjection = watchGlobeProjection(map);
     attachMap(map);
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
 
     const onLoad = () => {
-      map.setProjection({ type: "globe" });
+      enforceGlobeProjection(map);
       map.addSource(MARKER_SOURCE, { type: "geojson", data: selectedPointDataRef.current });
       map.addLayer({
         id: MARKER_HALO_LAYER,
@@ -146,6 +149,7 @@ export function GlobeMap() {
     canvas.addEventListener("webglcontextlost", onContextLost);
 
     return () => {
+      stopWatchingGlobeProjection();
       map.off("load", onLoad);
       map.off("click", onClick);
       canvas.removeEventListener("webglcontextlost", onContextLost);
