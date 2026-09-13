@@ -12,8 +12,9 @@ test("keeps the globe and initial guidance usable at all target widths", async (
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("/");
+    await expect(page.locator("main")).toHaveAttribute("data-map-status", "ready", { timeout: 20_000 });
     await expect(page.locator(".maplibregl-canvas")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Explore o planeta e selecione um ponto" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Selecione qualquer ponto da Terra" })).toBeVisible();
     const layout = await page.evaluate(() => {
       const panelRect = document.querySelector("aside")?.getBoundingClientRect();
       return {

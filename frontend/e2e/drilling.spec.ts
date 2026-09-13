@@ -62,6 +62,7 @@ async function mockApplicationApi(page: Page) {
 
 async function selectPoint(page: Page) {
   const canvas = page.locator(".maplibregl-canvas");
+  await expect(page.locator("main")).toHaveAttribute("data-map-status", "ready", { timeout: 20_000 });
   await expect(canvas).toBeVisible();
   await canvas.click({ position: { x: 640, y: 330 } });
   await expect(page.getByRole("heading", { name: "Fortaleza" })).toBeVisible();
@@ -77,6 +78,7 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
     if (request.url().includes("/api/v1/")) apiRequests += 1;
   });
   const canvas = page.locator(".maplibregl-canvas");
+  await expect(page.locator("main")).toHaveAttribute("data-map-status", "ready", { timeout: 20_000 });
   await expect(canvas).toBeVisible();
   await canvas.dragTo(canvas, {
     sourcePosition: { x: 720, y: 320 },
@@ -87,9 +89,8 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
 
   await selectPoint(page);
   await page.screenshot({ path: "../output/playwright/phase4/after-selected-1280.png" });
-  await page.getByRole("button", { name: "Preparar perfuração" }).click();
+  // A single CAVAR now calculates the destination and starts the journey when it is ready.
   await expect(page.getByRole("button", { name: "CAVAR" })).toBeEnabled();
-
   await page.getByRole("button", { name: "CAVAR" }).click();
   await expect(page.getByText("Origem → centro → antípoda", { exact: true })).toBeVisible();
   const cutaway = page.locator(".drilling-cutaway-overlay");
@@ -126,7 +127,7 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
   await expect(page.getByText("MANTO", { exact: true })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText("CENTRO DA TERRA", { exact: true })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("Terra firme mais próxima")).toBeVisible();
+  await expect(page.getByRole("dialog").locator("dt", { hasText: "Terra firme mais próxima" })).toBeVisible();
   await page.screenshot({ path: "../output/playwright/phase4/after-result-1280.png" });
 
   const accessibility = await new AxeBuilder({ page }).analyze();
@@ -134,5 +135,5 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
   expect(seriousViolations).toEqual([]);
 
   await page.getByRole("button", { name: "Escolher outro local" }).click();
-  await expect(page.getByRole("heading", { name: "Explore o planeta e selecione um ponto" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Selecione qualquer ponto da Terra" })).toBeVisible();
 });
