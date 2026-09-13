@@ -90,14 +90,29 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
   await expect(page.getByRole("button", { name: "CAVAR" })).toBeEnabled();
 
   await page.getByRole("button", { name: "CAVAR" }).click();
+  await expect(page.getByText("Origem → centro → antípoda", { exact: true })).toBeVisible();
+  const cutaway = page.locator(".drilling-cutaway-overlay");
+  await expect(cutaway).toHaveCSS("opacity", "1");
+  await expect(cutaway.locator("canvas")).toBeVisible();
   await page.getByRole("button", { name: "Pausar experiência" }).click();
   await expect(page.getByRole("button", { name: "Continuar experiência" })).toBeVisible();
   await page.getByRole("button", { name: "Continuar experiência" }).click();
   await page.getByRole("button", { name: "Cancelar experiência" }).click();
+  await expect(cutaway).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CAVAR" })).toBeVisible();
 
-  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("button", { name: "CAVAR" }).click();
+  await expect(page.getByText("MANTO", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("NÚCLEO EXTERNO", { exact: true })).toBeVisible();
+  await expect(page.getByText("NÚCLEO INTERNO", { exact: true })).toBeVisible();
+  await expect(page.getByText("CENTRO DA TERRA · ≈ 6.371 KM", { exact: true })).toBeVisible();
+  await expect(page.getByText("Subindo para o outro lado", { exact: true })).toBeVisible();
+  await expect(page.getByText("Revelando o antípoda", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible();
+  await expect(cutaway).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "Repetir perfuração" }).click();
   await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible();
   await expect(page.getByText("Terra firme mais próxima")).toBeVisible();
   await page.screenshot({ path: "../output/playwright/phase4/after-result-1280.png" });
@@ -106,8 +121,6 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
   const seriousViolations = accessibility.violations.filter(({ impact }) => impact === "serious" || impact === "critical");
   expect(seriousViolations).toEqual([]);
 
-  await page.getByRole("button", { name: "Repetir perfuração" }).click();
-  await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible();
   await page.getByRole("button", { name: "Escolher outro local" }).click();
   await expect(page.getByRole("heading", { name: "Explore o planeta e selecione um ponto" })).toBeVisible();
 });
