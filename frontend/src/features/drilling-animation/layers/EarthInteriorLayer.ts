@@ -55,6 +55,8 @@ export class EarthInteriorLayer implements CustomLayerInterface {
     });
     this.renderer.autoClear = false;
     this.renderer.setPixelRatio(1);
+    this.renderer.compile(this.scene, this.camera);
+    this.renderer.resetState();
   }
 
   render(_gl: WebGL2RenderingContext, options: CustomRenderMethodInput): void {

@@ -51,9 +51,17 @@ export class DrillRenderer {
     );
 
     this.probe = new THREE.Mesh(
-      new THREE.SphereGeometry(0.035, 12, 8),
+      new THREE.CapsuleGeometry(0.025, 0.06, 3, 8),
       new THREE.MeshBasicMaterial({ color: 0xffe49a }),
     );
+    this.probe.rotation.z = Math.PI / 2;
+    this.probe.name = "sonda";
+    const probeHalo = new THREE.Mesh(
+      new THREE.RingGeometry(0.052, 0.067, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffe49a, transparent: true, opacity: 0.45, side: THREE.DoubleSide }),
+    );
+    probeHalo.rotation.y = Math.PI / 2;
+    this.probe.add(probeHalo);
     this.group.add(this.probe);
 
     this.centerRing = new THREE.Mesh(

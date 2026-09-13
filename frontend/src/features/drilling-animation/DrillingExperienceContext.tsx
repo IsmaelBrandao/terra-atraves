@@ -19,6 +19,7 @@ import {
   isDrillingSequenceActive,
   type DrillingVisualState,
 } from "./drillingMachine";
+import { loadDrillingExperience, preloadDrillingExperience } from "./loadDrillingExperience";
 import { createDrillingQualityProfile, type DrillingQualityLevel } from "./performance/qualityProfile";
 
 interface ExperienceController {
@@ -63,12 +64,13 @@ export function DrillingExperienceProvider({ children }: { children: ReactNode }
     setQualityLevel(quality.level);
     const loadStartedAt = performance.now();
     try {
-      const { DrillingExperience } = await import("./DrillingExperience");
+      const { DrillingExperience } = await loadDrillingExperience();
       window.dispatchEvent(
         new CustomEvent("terra-atraves:three-loaded", {
           detail: { durationMs: performance.now() - loadStartedAt },
         }),
       );
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       const experience = new DrillingExperience({
         map,
         origin: point,
@@ -88,6 +90,18 @@ export function DrillingExperienceProvider({ children }: { children: ReactNode }
       loadingRef.current = false;
     }
   }, [canStart, drillingStatus.data?.antipode, point]);
+
+  useEffect(() => {
+    if (!point) return;
+    const run = () => preloadDrillingExperience();
+    const idleWindow = window as Window & { requestIdleCallback?: Window["requestIdleCallback"] };
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      const idleId = idleWindow.requestIdleCallback(run, { timeout: 2_000 });
+      return () => idleWindow.cancelIdleCallback(idleId);
+    }
+    const timeoutId = globalThis.setTimeout(run, 750);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [point]);
 
   const pause = useCallback(() => controllerRef.current?.pause(), []);
   const resume = useCallback(() => controllerRef.current?.resume(), []);

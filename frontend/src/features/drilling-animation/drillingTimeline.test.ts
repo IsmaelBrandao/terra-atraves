@@ -25,4 +25,10 @@ describe("drillingTimeline", () => {
     ]);
     expect(timelineDuration(timeline)).toBe(620);
   });
+
+  it("keeps the complete sequence concise without rushing the center", () => {
+    const timeline = createDrillingTimeline(false);
+    expect(timelineDuration(timeline)).toBe(10_450);
+    expect(timeline.find((segment) => segment.state === "crossing_center")?.durationMs).toBe(750);
+  });
 });

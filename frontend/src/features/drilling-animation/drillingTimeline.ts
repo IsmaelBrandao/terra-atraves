@@ -30,18 +30,18 @@ export function createDrillingTimeline(reducedMotion: boolean): TimelineSegment[
   const mantle = progressForDepth(EARTH_LAYER_BOUNDARIES_KM.mantle);
   const outerCore = progressForDepth(EARTH_LAYER_BOUNDARIES_KM.outerCore);
   return [
-    { state: "preparing", durationMs: 300, progressStart: 0, progressEnd: 0 },
-    { state: "zooming_out", durationMs: 1_400, progressStart: 0, progressEnd: 0 },
-    { state: "showing_route", durationMs: 800, progressStart: 0, progressEnd: 0 },
-    { state: "entering_earth", durationMs: 350, progressStart: 0, progressEnd: 0 },
-    { state: "crossing_crust", durationMs: 350, progressStart: 0, progressEnd: crust },
-    { state: "crossing_mantle", durationMs: 1_800, progressStart: crust, progressEnd: mantle },
-    { state: "crossing_outer_core", durationMs: 1_300, progressStart: mantle, progressEnd: outerCore },
-    { state: "crossing_inner_core", durationMs: 800, progressStart: outerCore, progressEnd: 0.49 },
-    { state: "crossing_center", durationMs: 600, progressStart: 0.49, progressEnd: 0.51 },
-    { state: "ascending", durationMs: 2_500, progressStart: 0.51, progressEnd: 1 - crust },
-    { state: "exiting_earth", durationMs: 500, progressStart: 1 - crust, progressEnd: 1 },
-    { state: "revealing_destination", durationMs: 1_400, progressStart: 1, progressEnd: 1 },
+    { state: "preparing", durationMs: 250, progressStart: 0, progressEnd: 0 },
+    { state: "zooming_out", durationMs: 1_150, progressStart: 0, progressEnd: 0 },
+    { state: "showing_route", durationMs: 700, progressStart: 0, progressEnd: 0 },
+    { state: "entering_earth", durationMs: 300, progressStart: 0, progressEnd: 0 },
+    { state: "crossing_crust", durationMs: 300, progressStart: 0, progressEnd: crust },
+    { state: "crossing_mantle", durationMs: 1_500, progressStart: crust, progressEnd: mantle },
+    { state: "crossing_outer_core", durationMs: 1_100, progressStart: mantle, progressEnd: outerCore },
+    { state: "crossing_inner_core", durationMs: 650, progressStart: outerCore, progressEnd: 0.49 },
+    { state: "crossing_center", durationMs: 750, progressStart: 0.49, progressEnd: 0.51 },
+    { state: "ascending", durationMs: 2_050, progressStart: 0.51, progressEnd: 1 - crust },
+    { state: "exiting_earth", durationMs: 450, progressStart: 1 - crust, progressEnd: 1 },
+    { state: "revealing_destination", durationMs: 1_250, progressStart: 1, progressEnd: 1 },
     { state: "completed", durationMs: 0, progressStart: 1, progressEnd: 1 },
   ];
 }

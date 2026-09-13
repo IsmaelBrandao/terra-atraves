@@ -25,8 +25,9 @@ export class EarthInteriorRenderer {
       const material = new THREE.MeshPhongMaterial({
         color: layer.color,
         transparent: true,
-        opacity: profile.shellOpacity + index * 0.045,
-        wireframe: index < 2,
+        opacity: profile.shellOpacity + index * 0.055,
+        wireframe: index === 0,
+        flatShading: index === 1,
         depthWrite: false,
         side: THREE.DoubleSide,
       });
@@ -43,6 +44,22 @@ export class EarthInteriorRenderer {
       sphere.rotation.y = -Math.PI / 7;
       this.group.add(sphere);
       this.materials.set(layer.name, material);
+
+      const boundary = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(
+          Array.from({ length: profile.sphereSegments }, (_, pointIndex) => {
+            const angle = (pointIndex / profile.sphereSegments) * Math.PI * 2;
+            return new THREE.Vector3(0, Math.cos(angle) * layer.radius, Math.sin(angle) * layer.radius);
+          }),
+        ),
+        new THREE.LineBasicMaterial({
+          color: layer.color,
+          transparent: true,
+          opacity: 0.3 + index * 0.09,
+        }),
+      );
+      boundary.name = `${layer.name}-limite`;
+      this.group.add(boundary);
     });
 
     const equator = new THREE.LineLoop(

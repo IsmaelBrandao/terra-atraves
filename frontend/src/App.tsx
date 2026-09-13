@@ -11,12 +11,12 @@ export function App() {
         </div>
 
         <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-5 sm:p-7">
-          <a className="pointer-events-auto flex items-center gap-3 text-white" href="/">
+          <a className="pointer-events-auto flex items-center gap-3 text-white" href="/" aria-label="Terra Através — início">
             <span className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200/20 bg-[#0b201a]/85 text-lg shadow-lg backdrop-blur">
               ◉
             </span>
             <span>
-              <strong className="block font-display text-lg font-medium tracking-wide">Terra Através</strong>
+              <strong className="block text-lg font-bold tracking-wide">Terra Através</strong>
               <span className="block text-[9px] font-bold uppercase tracking-[0.24em] text-emerald-100/45">
                 explore o outro lado
               </span>
@@ -27,7 +27,7 @@ export function App() {
           </div>
         </header>
 
-        <aside className="absolute bottom-4 left-4 right-4 z-10 max-h-[72dvh] overflow-y-auto sm:bottom-7 sm:left-7 sm:right-auto sm:w-[360px]">
+        <aside className="absolute bottom-3 left-3 right-3 z-10 sm:bottom-7 sm:left-7 sm:right-auto sm:w-[350px]">
           <LocationPanel />
         </aside>
 

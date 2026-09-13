@@ -5,13 +5,13 @@ import { useCreateDrilling, useDrillingStatus, useReverseLocation } from "../hoo
 import { useExplorationStore } from "../store/exploration.store";
 
 const STAGE_LABELS: Record<string, string> = {
-  queued: "Na fila",
-  calculating_antipode: "Calculando antípoda",
-  classifying_destination: "Classificando destino",
+  queued: "Aguardando processamento",
+  calculating_antipode: "Calculando destino",
+  classifying_destination: "Identificando terra ou oceano",
   resolving_region: "Identificando região",
-  finding_nearest_land: "Buscando terra firme",
-  completed: "Análise concluída",
-  failed: "Falha no processamento",
+  finding_nearest_land: "Buscando terra firme próxima",
+  completed: "Destino calculado",
+  failed: "Não foi possível concluir",
 };
 
 const VISUAL_STAGE_LABELS: Record<DrillingVisualState, string> = {
@@ -20,11 +20,11 @@ const VISUAL_STAGE_LABELS: Record<DrillingVisualState, string> = {
   zooming_out: "Visão planetária",
   showing_route: "Origem → centro → antípoda",
   entering_earth: "Entrando na Terra",
-  crossing_crust: "Atravessando a crosta",
-  crossing_mantle: "Atravessando o manto",
-  crossing_outer_core: "Núcleo externo",
-  crossing_inner_core: "Núcleo interno",
-  crossing_center: "Centro da Terra · ≈ 6.371 km",
+  crossing_crust: "CROSTA",
+  crossing_mantle: "MANTO",
+  crossing_outer_core: "NÚCLEO EXTERNO",
+  crossing_inner_core: "NÚCLEO INTERNO",
+  crossing_center: "CENTRO DA TERRA · ≈ 6.371 KM",
   ascending: "Subindo para o outro lado",
   exiting_earth: "Emergindo no destino",
   revealing_destination: "Revelando o antípoda",
@@ -35,23 +35,22 @@ const VISUAL_STAGE_LABELS: Record<DrillingVisualState, string> = {
 
 function formatDistance(distanceKm: number) {
   return distanceKm < 10
-    ? `${distanceKm.toFixed(1)} km`
+    ? `${distanceKm.toFixed(1).replace(".", ",")} km`
     : `${Math.round(distanceKm).toLocaleString("pt-BR")} km`;
 }
 
 function Coordinate({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.045] px-3 py-2.5">
-      <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-100/45">
-        {label}
-      </span>
-      <span className="mt-1 block font-mono text-sm text-white">{value.toFixed(6)}°</span>
+    <div className="rounded-lg border border-white/10 bg-black/10 px-3 py-2.5">
+      <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-100/45">{label}</span>
+      <span className="mt-1 block font-mono text-[13px] text-white">{value.toFixed(6)}°</span>
     </div>
   );
 }
 
 export function LocationPanel() {
   const point = useExplorationStore((state) => state.selectedPoint);
+  const resetExploration = useExplorationStore((state) => state.resetExploration);
   const reverse = useReverseLocation();
   const drilling = useCreateDrilling();
   const drillingStatus = useDrillingStatus();
@@ -59,197 +58,162 @@ export function LocationPanel() {
 
   if (!point) {
     return (
-      <div className="panel-card">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-300/10 text-amber-200">
-          <span className="text-xl">⌖</span>
+      <div className="panel-card panel-card--intro">
+        <div className="flex items-center gap-3">
+          <span className="selection-symbol" aria-hidden="true">⌖</span>
+          <div>
+            <p className="eyebrow">Comece por aqui</p>
+            <h1 className="mt-1 text-lg font-bold leading-tight text-white">Explore o planeta e selecione um ponto</h1>
+          </div>
         </div>
-        <h2 className="mt-5 font-display text-2xl leading-tight text-white">Escolha seu ponto de partida</h2>
-        <p className="mt-2 text-sm leading-6 text-emerald-50/55">
-          Gire o planeta, aproxime o mapa e clique em qualquer lugar para marcar coordenadas exatas.
-        </p>
-        <div className="mt-6 flex items-center gap-2 text-xs text-emerald-100/45">
-          <span className="h-px flex-1 bg-white/10" />
-          clique no globo
-          <span className="h-px flex-1 bg-white/10" />
-        </div>
+        <p className="mt-3 text-xs leading-5 text-emerald-50/55">Arraste para girar, aproxime e toque no globo.</p>
       </div>
     );
   }
 
+  const job = drillingStatus.data;
+  const destination = job?.destination;
+  const isBackendWorking = job?.status === "queued" || job?.status === "processing";
+  const hasBackendError = drillingStatus.isError || job?.status === "failed" || drillingStatus.isTimedOut;
+  const originName = reverse.data?.display_name.split(",")[0] ?? "Coordenada marcada";
+
+  const createJob = () => {
+    drilling.reset();
+    drilling.mutate({ ...point, originLabel: reverse.data?.display_name });
+  };
+
+  const chooseAnotherLocation = () => {
+    experience.cancel();
+    drilling.reset();
+    resetExploration();
+  };
+
   return (
     <div className="panel-card">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="eyebrow">Ponto selecionado</p>
-          <h2 className="mt-2 font-display text-2xl text-white">
-            {reverse.isPending ? "Localizando…" : reverse.data?.display_name.split(",")[0] ?? "Coordenada marcada"}
-          </h2>
+          <h2 className="mt-1.5 truncate text-xl font-bold text-white">{reverse.isPending ? "Localizando…" : originName}</h2>
         </div>
-        <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-amber-300 shadow-[0_0_18px_#fcd34d]" />
+        <span className="selected-indicator" aria-hidden="true" />
       </div>
 
       {experience.isActive ? (
-        <p className="mt-2 font-mono text-[11px] text-emerald-50/50">
-          {point.latitude.toFixed(6)}° · {point.longitude.toFixed(6)}°
-        </p>
+        <p className="mt-2 font-mono text-[11px] text-emerald-50/50">{point.latitude.toFixed(6)}° · {point.longitude.toFixed(6)}°</p>
       ) : (
         <>
-          <p className="mt-2 min-h-10 text-xs leading-5 text-emerald-50/50">
-            {reverse.isError
-              ? "Não foi possível identificar o endereço agora. As coordenadas continuam válidas."
-              : reverse.data?.display_name ?? "Consultando endereço…"}
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <Coordinate label="Latitude" value={point.latitude} />
             <Coordinate label="Longitude" value={point.longitude} />
           </div>
+          {reverse.isError && (
+            <div className="status-message mt-3" role="status">
+              <span>Endereço indisponível. As coordenadas continuam válidas.</span>
+              <button onClick={() => void reverse.refetch()}>Tentar novamente</button>
+            </div>
+          )}
         </>
       )}
 
-      {drillingStatus.data ? (
-        <div className="mt-5 rounded-xl border border-emerald-300/15 bg-emerald-300/[0.06] p-3">
-          <div className="flex justify-between text-xs text-emerald-100/70">
-            <span>
-              {STAGE_LABELS[drillingStatus.data.stage] ??
-                drillingStatus.data.stage.replaceAll("_", " ")}
-            </span>
-            <span>{drillingStatus.data.progress}%</span>
-          </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/25">
-            <div
-              className="h-full rounded-full bg-emerald-300 transition-[width] duration-500"
-              style={{ width: `${drillingStatus.data.progress}%` }}
-            />
-          </div>
-          {drillingStatus.data.antipode && (
-            <p className="mt-3 text-xs text-emerald-50/60">
-              Antípoda: {drillingStatus.data.antipode.latitude.toFixed(4)}°, {" "}
-              {drillingStatus.data.antipode.longitude.toFixed(4)}°
-            </p>
+      {!job && (
+        <>
+          <button className="primary-action mt-4" disabled={drilling.isPending} onClick={createJob}>
+            {drilling.isPending ? "Preparando…" : "Preparar perfuração"}
+          </button>
+          {drilling.isError && (
+            <div className="error-message mt-3" role="alert">
+              <span>O serviço não respondeu. Verifique a conexão e tente novamente.</span>
+              <button onClick={createJob}>Tentar novamente</button>
+            </div>
           )}
-          {drillingStatus.data.status === "completed" && experience.phase !== "completed" && (
-            <div className="mt-4 border-t border-white/10 pt-4">
+        </>
+      )}
+
+      {job && (
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <div className="flex items-center justify-between gap-4 text-xs" aria-live="polite">
+            <span className="text-emerald-50/65">{STAGE_LABELS[job.stage] ?? job.stage.replaceAll("_", " ")}</span>
+            <span className="font-mono text-emerald-100/50">{job.progress}%</span>
+          </div>
+          {isBackendWorking && (
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-amber-200 transition-[width] duration-500" style={{ width: `${job.progress}%` }} />
+            </div>
+          )}
+
+          {hasBackendError && (
+            <div className="error-message mt-3" role="alert">
+              <span>{drillingStatus.isTimedOut ? "O cálculo está demorando mais que o esperado." : "Não foi possível consultar o resultado."}</span>
+              <button onClick={job.status === "failed" ? createJob : drillingStatus.retry}>Tentar novamente</button>
+            </div>
+          )}
+
+          {job.status === "completed" && experience.phase !== "completed" && (
+            <div className="mt-4">
               {experience.isActive ? (
                 <>
-                  <p className="text-center text-xs font-bold text-white" aria-live="polite">
-                    {VISUAL_STAGE_LABELS[experience.phase]}
-                  </p>
+                  <p className="stage-label" aria-live="polite">{VISUAL_STAGE_LABELS[experience.phase]}</p>
+                  {experience.phase === "crossing_center" && (
+                    <p className="mt-1 text-center text-[11px] text-amber-100/65">aproximadamente 6.371 km abaixo da superfície</p>
+                  )}
                   <DrillingTelemetry />
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {experience.phase === "paused" ? (
-                      <button className="experience-secondary-button" onClick={experience.resume} aria-label="Continuar experiência">
-                        Continuar
-                      </button>
-                    ) : (
-                      <button className="experience-secondary-button" onClick={experience.pause} aria-label="Pausar experiência">
-                        Pausar
-                      </button>
-                    )}
-                    <button className="experience-secondary-button" onClick={experience.cancel} aria-label="Cancelar experiência">
-                      Cancelar
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      className="experience-secondary-button flex-1"
+                      onClick={experience.phase === "paused" ? experience.resume : experience.pause}
+                      aria-label={experience.phase === "paused" ? "Continuar experiência" : "Pausar experiência"}
+                    >
+                      {experience.phase === "paused" ? "Continuar" : "Pausar"}
                     </button>
+                    <button className="experience-secondary-button flex-1" onClick={experience.cancel} aria-label="Cancelar experiência">Cancelar</button>
                   </div>
-                  <p className="mt-2 text-center text-[9px] uppercase tracking-[0.12em] text-emerald-100/35">
-                    {experience.qualityLevel === "LOW_END" ? "qualidade adaptativa" : "qualidade normal"}
+                  <p className="mt-2 text-center text-[9px] text-emerald-100/35">
+                    Crosta ampliada para fins didáticos · {experience.qualityLevel === "LOW_END" ? "qualidade adaptativa" : "qualidade normal"}
                   </p>
                 </>
               ) : (
                 <>
-                  {experience.phase === "cancelled" && (
-                    <p className="mb-3 text-center text-xs text-emerald-50/55">
-                      A visualização foi encerrada. O resultado permanece disponível.
-                    </p>
-                  )}
-                  <button
-                    className="dig-button"
-                    onClick={() => void experience.start()}
-                    disabled={!experience.canStart}
-                    aria-label="Iniciar experiência de perfuração"
-                  >
-                    CAVAR
-                  </button>
+                  {experience.phase === "cancelled" && <p className="mb-3 text-center text-xs text-emerald-50/55">Visualização encerrada. O resultado foi preservado.</p>}
+                  <button className="dig-button" onClick={() => void experience.start()} disabled={!experience.canStart}>CAVAR</button>
+                  <p className="mt-2 text-center text-[10px] text-emerald-50/40">Uma viagem reta pelo centro da Terra</p>
                 </>
               )}
             </div>
           )}
-          {drillingStatus.data.destination && experience.phase === "completed" && (
-            <div className="mt-4 border-t border-white/10 pt-4 text-xs text-emerald-50/65">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="font-bold uppercase tracking-[0.14em] text-emerald-100/45">
-                  Destino
-                </span>
-                <span className="rounded-full bg-white/10 px-2.5 py-1 font-bold text-white">
-                  {drillingStatus.data.destination.type === "land" ? "Terra" : "Oceano"}
-                </span>
-              </div>
-              {drillingStatus.data.destination.country && (
-                <p>
-                  <span className="text-emerald-100/40">País:</span>{" "}
-                  {drillingStatus.data.destination.country.name}
-                </p>
-              )}
-              {drillingStatus.data.destination.state && (
-                <p className="mt-1">
-                  <span className="text-emerald-100/40">Estado/região:</span>{" "}
-                  {drillingStatus.data.destination.state.name}
-                </p>
-              )}
-              {drillingStatus.data.destination.nearest_place && (
-                <p className="mt-1">
-                  <span className="text-emerald-100/40">Localidade mais próxima:</span>{" "}
-                  {drillingStatus.data.destination.nearest_place.name} · {" "}
-                  {formatDistance(drillingStatus.data.destination.nearest_place.distance_km)}
-                </p>
-              )}
-              {drillingStatus.data.destination.nearest_land && (
-                <div className="mt-3 rounded-lg bg-black/15 p-3">
-                  <p className="font-bold text-white">Terra firme mais próxima</p>
-                  <p className="mt-1 font-mono text-[11px]">
-                    {drillingStatus.data.destination.nearest_land.coordinates.latitude.toFixed(4)}°, {" "}
-                    {drillingStatus.data.destination.nearest_land.coordinates.longitude.toFixed(4)}°
-                  </p>
-                  <p className="mt-1">
-                    Distância: {formatDistance(drillingStatus.data.destination.nearest_land.distance_km)}
-                  </p>
-                  {drillingStatus.data.destination.nearest_land.country && (
-                    <p className="mt-1">
-                      País: {drillingStatus.data.destination.nearest_land.country.name}
-                    </p>
-                  )}
-                  {drillingStatus.data.destination.nearest_land.nearest_place && (
-                    <p className="mt-1">
-                      Localidade próxima: {drillingStatus.data.destination.nearest_land.nearest_place.name}
-                    </p>
-                  )}
+
+          {destination && experience.phase === "completed" && (
+            <section className="result-reveal mt-4" aria-labelledby="destination-title">
+              <p className="eyebrow">Destino</p>
+              <div className="mt-2 flex items-start justify-between gap-3">
+                <div>
+                  <h3 id="destination-title" className="text-xl font-bold text-white">
+                    {job.destination_label ?? destination.nearest_place?.name ?? (destination.type === "land" ? "Destino terrestre" : "Oceano")}
+                  </h3>
+                  <p className="mt-1 font-mono text-[11px] text-emerald-50/50">{job.antipode?.latitude.toFixed(4)}°, {job.antipode?.longitude.toFixed(4)}°</p>
                 </div>
-              )}
-              <button
-                className="experience-secondary-button mt-4 w-full"
-                onClick={() => void experience.start()}
-                aria-label="Repetir experiência de perfuração"
-              >
-                Repetir experiência
-              </button>
-            </div>
+                <span className="destination-badge">{destination.type === "land" ? "Terra" : "Oceano"}</span>
+              </div>
+
+              <div className="result-details mt-4 space-y-2 text-xs text-emerald-50/65">
+                {destination.country && <p><span>País</span><strong>{destination.country.name}</strong></p>}
+                {destination.state && <p><span>Estado/região</span><strong>{destination.state.name}</strong></p>}
+                {destination.nearest_place && <p><span>Localidade próxima</span><strong>{destination.nearest_place.name} · {formatDistance(destination.nearest_place.distance_km)}</strong></p>}
+                {destination.nearest_land && (
+                  <div className="mt-3 border-l-2 border-amber-200/50 pl-3">
+                    <p className="font-bold text-white">Terra firme mais próxima</p>
+                    <p className="mt-1">{destination.nearest_land.nearest_place?.name ?? destination.nearest_land.country?.name ?? "Não determinada"}</p>
+                    <p className="mt-1 font-mono text-[11px]">{formatDistance(destination.nearest_land.distance_km)}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button className="experience-secondary-button" onClick={() => void experience.start()}>Repetir perfuração</button>
+                <button className="experience-secondary-button" onClick={chooseAnotherLocation}>Escolher outro local</button>
+              </div>
+            </section>
           )}
         </div>
-      ) : (
-        <button
-          className="mt-5 w-full rounded-xl bg-amber-300 px-4 py-3 text-sm font-extrabold text-[#14201b] transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={drilling.isPending}
-          onClick={() =>
-            drilling.mutate({
-              ...point,
-              originLabel: reverse.data?.display_name,
-            })
-          }
-        >
-          {drilling.isPending ? "Iniciando…" : "Calcular destino antípoda"}
-        </button>
-      )}
-      {drilling.isError && (
-        <p className="mt-3 text-xs text-red-300">Não foi possível iniciar o cálculo.</p>
       )}
     </div>
   );
