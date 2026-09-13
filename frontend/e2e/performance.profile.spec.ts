@@ -40,7 +40,11 @@ async function mockApi(page: Page) {
 test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }) => {
   test.setTimeout(240_000);
   await mockApi(page);
-  await page.addInitScript(() => {
+  const forceLowEnd = process.env.PROFILE_LOW_END === "1";
+  await page.addInitScript((lowEnd) => {
+    if (lowEnd) {
+      Object.defineProperty(navigator, "hardwareConcurrency", { configurable: true, get: () => 4 });
+    }
     const metrics = { longTasks: [] as number[], frameTimes: [] as number[], importMs: -1 };
     Object.defineProperty(window, "__terraProfile", { value: metrics });
     new PerformanceObserver((list) => {
@@ -56,7 +60,7 @@ test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }
     window.addEventListener("terra-atraves:three-loaded", ((event: CustomEvent<{ durationMs: number }>) => {
       metrics.importMs = event.detail.durationMs;
     }) as EventListener);
-  });
+  }, forceLowEnd);
   await page.goto("/");
   const canvas = page.locator(".maplibregl-canvas");
   await expect(canvas).toBeVisible();
@@ -90,7 +94,11 @@ test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }
   await client.send("Profiler.enable");
   await client.send("Profiler.setSamplingInterval", { interval: 1_000 });
   await client.send("Profiler.start");
-  await run("CAVAR");
+  const firstRun = run("CAVAR");
+  if (forceLowEnd) {
+    await expect(page.getByText("qualidade adaptativa", { exact: false })).toBeVisible();
+  }
+  await firstRun;
   const { profile: cpuProfile } = await client.send("Profiler.stop");
   const sampleCounts = new Map<number, number>();
   for (const nodeId of cpuProfile.samples ?? []) {

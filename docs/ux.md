@@ -34,6 +34,8 @@ A jornada completa foi auditada com axe-core no Chromium: nenhuma violação sé
 Botões possuem nomes discerníveis, foco visível e estado disabled; mudanças de backend e etapa
 visual usam `aria-live`. Camadas são diferenciadas por texto, geometria e cor. A preferência
 `prefers-reduced-motion` mantém origem, trajetória e destino em 620 ms sem remover o resultado.
+O perfil `LOW_END` foi confirmado em execução com CPU throttling 4×, não apenas por teste
+unitário do número de núcleos.
 
 ## Cenários reais
 

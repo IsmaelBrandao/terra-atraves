@@ -50,6 +50,10 @@ com CPU throttling 4×, 33,1 FPS. O headless por software marcou 18 FPS e por is
 apenas como controle, não como comparação direta. O mapa continuou interativo no perfil 4×
 e os controles responderam.
 
+O caminho `LOW_END` também foi ativado e verificado pelo texto “qualidade adaptativa”, junto
+de throttling real de CPU: 57 FPS sem limitação e 25,2 FPS em 4×, com três long tasks entre
+70 e 88 ms. Assim, a validação não dependeu apenas de alterar o número declarado de CPUs.
+
 O perfil de CPU inicial relacionou as tarefas longas principalmente à compilação e consulta
 de programas WebGL (`getProgramParameter`, `getProgramInfoLog` e `getProgram`). Depois de
 antecipar `renderer.compile()` em `PREPARING`, as chamadas de inspeção de shader deixaram os
