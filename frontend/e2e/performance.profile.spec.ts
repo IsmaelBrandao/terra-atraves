@@ -38,7 +38,8 @@ async function mockApi(page: Page) {
 }
 
 test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }) => {
-  test.setTimeout(240_000);
+  const cycleCount = Number(process.env.PROFILE_CYCLES ?? "10");
+  test.setTimeout(cycleCount * 50_000 + 120_000);
   await mockApi(page);
   const forceLowEnd = process.env.PROFILE_LOW_END === "1";
   await page.addInitScript((lowEnd) => {
@@ -78,7 +79,7 @@ test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }
   const run = async (buttonName: "CAVAR" | "Repetir perfuração") => {
     await page.getByRole("button", { name: buttonName }).click();
     await destination.waitFor({ state: "hidden" });
-    await destination.waitFor({ state: "visible", timeout: 20_000 });
+    await destination.waitFor({ state: "visible", timeout: 35_000 });
   };
   const heapMb = async () => {
     await client.send("HeapProfiler.collectGarbage");
@@ -125,7 +126,6 @@ test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }
   });
 
   const heapSamples: number[] = [];
-  const cycleCount = Number(process.env.PROFILE_CYCLES ?? "10");
   for (let cycle = 0; cycle < cycleCount; cycle += 1) {
     await run("Repetir perfuração");
     heapSamples.push(await heapMb());

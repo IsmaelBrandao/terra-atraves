@@ -1,5 +1,4 @@
 import { DrillingTelemetry } from "../features/drilling-animation/DrillingTelemetry";
-import type { DrillingVisualState } from "../features/drilling-animation/drillingMachine";
 import { useDrillingExperience } from "../features/drilling-animation/useDrillingExperience";
 import { useCreateDrilling, useDrillingStatus, useReverseLocation } from "../hooks/useLocation";
 import { useExplorationStore } from "../store/exploration.store";
@@ -12,25 +11,6 @@ const STAGE_LABELS: Record<string, string> = {
   finding_nearest_land: "Buscando terra firme próxima",
   completed: "Destino calculado",
   failed: "Não foi possível concluir",
-};
-
-const VISUAL_STAGE_LABELS: Record<DrillingVisualState, string> = {
-  idle: "Pronto para cavar",
-  preparing: "Preparando a trajetória",
-  zooming_out: "Visão planetária",
-  showing_route: "Origem → centro → antípoda",
-  entering_earth: "Entrando na Terra",
-  crossing_crust: "CROSTA",
-  crossing_mantle: "MANTO",
-  crossing_outer_core: "NÚCLEO EXTERNO",
-  crossing_inner_core: "NÚCLEO INTERNO",
-  crossing_center: "CENTRO DA TERRA · ≈ 6.371 KM",
-  ascending: "Subindo para o outro lado",
-  exiting_earth: "Emergindo no destino",
-  revealing_destination: "Revelando o antípoda",
-  paused: "Experiência pausada",
-  completed: "Chegada concluída",
-  cancelled: "Experiência cancelada",
 };
 
 function formatDistance(distanceKm: number) {
@@ -152,11 +132,7 @@ export function LocationPanel() {
             <div className="mt-4">
               {experience.isActive ? (
                 <>
-                  <p className="stage-label" aria-live="polite">{VISUAL_STAGE_LABELS[experience.phase]}</p>
-                  {experience.phase === "crossing_center" && (
-                    <p className="mt-1 text-center text-[11px] text-amber-100/65">aproximadamente 6.371 km abaixo da superfície</p>
-                  )}
-                  <DrillingTelemetry />
+                  <DrillingTelemetry phase={experience.phase} />
                   <div className="mt-3 flex gap-2">
                     {experience.phase !== "preparing" && (
                       <button

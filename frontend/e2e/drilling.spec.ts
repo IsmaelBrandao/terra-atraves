@@ -68,6 +68,7 @@ async function selectPoint(page: Page) {
 }
 
 test("covers the complete drilling journey and remains accessible", async ({ page }) => {
+  test.setTimeout(90_000);
   await mockApplicationApi(page);
   await page.goto("/");
 
@@ -94,26 +95,37 @@ test("covers the complete drilling journey and remains accessible", async ({ pag
   const cutaway = page.locator(".drilling-cutaway-overlay");
   await expect(cutaway).toHaveCSS("opacity", "1");
   await expect(cutaway.locator("canvas")).toBeVisible();
+  await expect(page.getByText("MANTO", { exact: true })).toBeVisible({ timeout: 10_000 });
+  const progress = page.getByTestId("drilling-progress");
   await page.getByRole("button", { name: "Pausar experiência" }).click();
   await expect(page.getByRole("button", { name: "Continuar experiência" })).toBeVisible();
+  const pausedProgress = await progress.textContent();
+  await page.waitForTimeout(700);
+  await expect(progress).toHaveText(pausedProgress!);
   await page.getByRole("button", { name: "Continuar experiência" }).click();
+  await expect.poll(() => progress.textContent()).not.toBe(pausedProgress);
   await page.getByRole("button", { name: "Cancelar experiência" }).click();
   await expect(cutaway).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CAVAR" })).toBeVisible();
 
   await page.getByRole("button", { name: "CAVAR" }).click();
-  await expect(page.getByText("MANTO", { exact: true })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("NÚCLEO EXTERNO", { exact: true })).toBeVisible();
-  await expect(page.getByText("NÚCLEO INTERNO", { exact: true })).toBeVisible();
-  await expect(page.getByText("CENTRO DA TERRA · ≈ 6.371 KM", { exact: true })).toBeVisible();
-  await expect(page.getByText("Subindo para o outro lado", { exact: true })).toBeVisible();
-  await expect(page.getByText("Revelando o antípoda", { exact: true })).toBeVisible();
+  await expect(page.getByText("MANTO", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("NÚCLEO EXTERNO", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("NÚCLEO INTERNO", { exact: true })).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("CENTRO DA TERRA", { exact: true })).toBeVisible({ timeout: 5_000 });
+  await expect(progress).toHaveText("50,0%");
+  await expect(page.getByText("SUBINDO · NÚCLEO INTERNO", { exact: true })).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("SUBINDO · NÚCLEO EXTERNO", { exact: true })).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("SUBINDO · MANTO", { exact: true })).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("Revelando o antípoda", { exact: true })).toBeVisible({ timeout: 12_000 });
   await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible();
   await expect(cutaway).toHaveCount(0);
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("button", { name: "Repetir perfuração" }).click();
-  await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible();
+  await expect(page.getByText("MANTO", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("CENTRO DA TERRA", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: "Oceano Pacífico" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Terra firme mais próxima")).toBeVisible();
   await page.screenshot({ path: "../output/playwright/phase4/after-result-1280.png" });
 

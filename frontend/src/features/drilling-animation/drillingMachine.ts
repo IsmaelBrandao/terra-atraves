@@ -3,14 +3,9 @@ export type DrillingVisualState =
   | "preparing"
   | "zooming_out"
   | "showing_route"
-  | "entering_earth"
-  | "crossing_crust"
-  | "crossing_mantle"
-  | "crossing_outer_core"
-  | "crossing_inner_core"
+  | "descending"
   | "crossing_center"
   | "ascending"
-  | "exiting_earth"
   | "revealing_destination"
   | "paused"
   | "completed"
@@ -28,14 +23,9 @@ const ORDERED_STATES: DrillingVisualState[] = [
   "preparing",
   "zooming_out",
   "showing_route",
-  "entering_earth",
-  "crossing_crust",
-  "crossing_mantle",
-  "crossing_outer_core",
-  "crossing_inner_core",
+  "descending",
   "crossing_center",
   "ascending",
-  "exiting_earth",
   "revealing_destination",
   "completed",
 ];

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { disposeThreeObject } from "../cleanup/disposeThreeObject";
-import { telemetryAtProgress } from "../drillingMath";
+import type { DrillingFrame } from "../drillingMath";
 import type { DrillingQualityProfile } from "../performance/qualityProfile";
 import { DrillRenderer } from "../render/DrillRenderer";
 import { EarthInteriorRenderer } from "../render/EarthInteriorRenderer";
@@ -57,9 +57,9 @@ export class EarthInteriorOverlay {
     this.wrapper.classList.remove("drilling-cutaway-overlay--visible");
   }
 
-  setProgress(visualProgress: number, physicalProgress: number): void {
-    this.drill.setProgress(visualProgress);
-    this.earth.setActiveLayer(telemetryAtProgress(physicalProgress).layer);
+  setFrame(frame: DrillingFrame): void {
+    this.drill.setProgress(frame.visualProgress);
+    this.earth.setActiveLayer(frame.layer);
     this.render();
   }
 

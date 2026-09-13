@@ -15,4 +15,3 @@ export const VISUAL_LAYER_RADII = {
 } as const;
 
 export const DRILLING_TELEMETRY_EVENT = "terra-atraves:drilling-telemetry";
-export const TELEMETRY_INTERVAL_MS = 125;

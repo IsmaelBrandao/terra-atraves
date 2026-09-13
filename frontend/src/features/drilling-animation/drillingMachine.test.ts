@@ -21,17 +21,17 @@ describe("drillingMachine", () => {
   });
 
   it("pauses, resumes the previous phase and cancels", () => {
-    const running = { state: "crossing_mantle", resumeState: null } as const;
+    const running = { state: "descending", resumeState: null } as const;
     const paused = transitionDrillingMachine(running, { type: "PAUSE" });
-    expect(paused).toEqual({ state: "paused", resumeState: "crossing_mantle" });
-    expect(transitionDrillingMachine(paused, { type: "RESUME" }).state).toBe("crossing_mantle");
+    expect(paused).toEqual({ state: "paused", resumeState: "descending" });
+    expect(transitionDrillingMachine(paused, { type: "RESUME" }).state).toBe("descending");
     expect(transitionDrillingMachine(paused, { type: "CANCEL" }).state).toBe("cancelled");
   });
 
   it("does not move backwards accidentally", () => {
     const current = { state: "ascending", resumeState: null } as const;
     expect(
-      transitionDrillingMachine(current, { type: "ADVANCE", target: "crossing_crust" }),
+      transitionDrillingMachine(current, { type: "ADVANCE", target: "descending" }),
     ).toBe(current);
   });
 });

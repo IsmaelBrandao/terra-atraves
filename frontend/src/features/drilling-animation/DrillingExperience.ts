@@ -1,7 +1,7 @@
 import type { Map as MapLibreMap, ProjectionSpecification } from "maplibre-gl";
 
-import { DRILLING_TELEMETRY_EVENT, TELEMETRY_INTERVAL_MS } from "./drilling.constants";
-import { telemetryAtProgress } from "./drillingMath";
+import { DRILLING_TELEMETRY_EVENT } from "./drilling.constants";
+import { frameAtProgress, type DrillingTelemetry } from "./drillingMath";
 import {
   INITIAL_DRILLING_MACHINE,
   transitionDrillingMachine,
@@ -48,7 +48,6 @@ export class DrillingExperience {
   private readonly interactionSnapshot = new Map<ToggleHandler, boolean>();
   private machine: DrillingMachineSnapshot = { ...INITIAL_DRILLING_MACHINE };
   private overlay: EarthInteriorOverlay | null = null;
-  private lastTelemetryAt = -Infinity;
   private revealingStarted = false;
   private finished = false;
 
@@ -121,9 +120,7 @@ export class DrillingExperience {
 
   private renderFrame(elapsedMs: number): boolean {
     const sample = sampleTimeline(this.timeline, elapsedMs);
-    let stateChanged = false;
     if (sample.state !== this.machine.state) {
-      stateChanged = true;
       this.machine = transitionDrillingMachine(this.machine, {
         type: "ADVANCE",
         target: sample.state,
@@ -132,11 +129,9 @@ export class DrillingExperience {
       this.handleSemanticState(this.machine.state);
     }
 
-    this.overlay?.setProgress(sample.visualProgress, sample.progress);
-    if (stateChanged || elapsedMs - this.lastTelemetryAt >= TELEMETRY_INTERVAL_MS || sample.completed) {
-      this.dispatchTelemetry(sample.progress);
-      this.lastTelemetryAt = elapsedMs;
-    }
+    const frame = frameAtProgress(sample.progress);
+    this.overlay?.setFrame(frame);
+    this.dispatchTelemetry(frame);
 
     if (sample.completed) {
       this.finish();
@@ -186,9 +181,9 @@ export class DrillingExperience {
     this.overlay = null;
   }
 
-  private dispatchTelemetry(progress: number): void {
+  private dispatchTelemetry(telemetry: DrillingTelemetry): void {
     window.dispatchEvent(
-      new CustomEvent(DRILLING_TELEMETRY_EVENT, { detail: telemetryAtProgress(progress) }),
+      new CustomEvent(DRILLING_TELEMETRY_EVENT, { detail: telemetry }),
     );
   }
 
