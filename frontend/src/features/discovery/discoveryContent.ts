@@ -74,6 +74,12 @@ function joinParts(parts: Array<string | null>, separator = ", "): string | null
   return unique.length ? unique.join(separator) : null;
 }
 
+function addImageSearchTerm(terms: ImageSearchTerm[], term: ImageSearchTerm | null): void {
+  if (!term) return;
+  const normalized = term.title.toLocaleLowerCase("pt-BR");
+  if (!terms.some((item) => item.title.toLocaleLowerCase("pt-BR") === normalized)) terms.push(term);
+}
+
 function buildOrigin(job: DrillingResponse, location: LocationDescription | null): DiscoveryOrigin {
   const rawLabelHead = clean(job.origin_label?.split(",")[0]);
   // Nominatim's placeholder for open water is not a place name.
@@ -110,9 +116,9 @@ export function buildDiscovery(job: DrillingResponse, originLocation: LocationDe
     const locale = joinParts([state, country].filter((part) => part !== title));
 
     const imageSearch: ImageSearchTerm[] = [];
-    if (placeName && place) imageSearch.push({ title: placeName, near: place.coordinates, maxDistanceKm: 60 });
-    if (state) imageSearch.push({ title: state, near: antipode, maxDistanceKm: 900 });
-    if (country) imageSearch.push({ title: country, near: null, maxDistanceKm: Infinity });
+    if (placeName && place) addImageSearchTerm(imageSearch, { title: placeName, near: place.coordinates, maxDistanceKm: 60 });
+    if (state) addImageSearchTerm(imageSearch, { title: state, near: antipode, maxDistanceKm: 900 });
+    if (country) addImageSearchTerm(imageSearch, { title: country, near: null, maxDistanceKm: Infinity });
 
     return {
       ...base,
@@ -144,6 +150,7 @@ export function buildDiscovery(job: DrillingResponse, originLocation: LocationDe
   const directPlaceName = clean(directPlace?.name);
 
   const landPlaceCountry = clean(landPlace?.country);
+  const oceanTitle = clean(job.destination_label) ?? "Oceano";
   // Without a country polygon the coast is usually a small island. The reference place can be
   // hundreds of km away, so it never becomes the name of the land itself.
   const nearestLand: DiscoveryPlace | null = land
@@ -178,20 +185,24 @@ export function buildDiscovery(job: DrillingResponse, originLocation: LocationDe
   const imageSearch: ImageSearchTerm[] = [];
   const settlementName = nearestSettlement?.name ?? null;
   if (settlementName && nearestSettlement?.coordinates) {
-    imageSearch.push({ title: settlementName, near: nearestSettlement.coordinates, maxDistanceKm: 60 });
+    addImageSearchTerm(imageSearch, { title: settlementName, near: nearestSettlement.coordinates, maxDistanceKm: 60 });
   }
   if (landPlaceName && landPlace && landPlaceName !== settlementName) {
-    imageSearch.push({ title: landPlaceName, near: landPlace.coordinates, maxDistanceKm: 60 });
+    addImageSearchTerm(imageSearch, { title: landPlaceName, near: landPlace.coordinates, maxDistanceKm: 60 });
   }
-  if (landCountry) imageSearch.push({ title: landCountry, near: null, maxDistanceKm: Infinity });
-  else if (landPlaceCountry && landPlaceCountry !== settlementName) {
-    imageSearch.push({ title: landPlaceCountry, near: null, maxDistanceKm: Infinity });
+  if (nearestLand?.name && nearestLand.name !== UNNAMED_LAND) {
+    addImageSearchTerm(imageSearch, { title: nearestLand.name, near: null, maxDistanceKm: Infinity });
+  }
+  if (landCountry) addImageSearchTerm(imageSearch, { title: landCountry, near: null, maxDistanceKm: Infinity });
+  if (landPlaceCountry) addImageSearchTerm(imageSearch, { title: landPlaceCountry, near: null, maxDistanceKm: Infinity });
+  if (!/^(oceano|ocean|mar)$/i.test(oceanTitle)) {
+    addImageSearchTerm(imageSearch, { title: oceanTitle, near: null, maxDistanceKm: Infinity });
   }
 
   return {
     ...base,
     kind: "ocean",
-    title: clean(job.destination_label) ?? "Oceano",
+    title: oceanTitle,
     nearestLand,
     nearestSettlement,
     imageSearch,

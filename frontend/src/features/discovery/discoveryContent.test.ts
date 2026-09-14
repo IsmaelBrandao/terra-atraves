@@ -28,7 +28,7 @@ describe("buildDiscovery", () => {
     expect(discovery.origin).toMatchObject({ title: "Fortaleza", subtitle: "Ceará, Brasil" });
     expect(discovery.nearestLand).toMatchObject({ name: "Indonésia", distanceKm: 479.7, detail: "Localidade de referência: Biak, Indonésia" });
     expect(discovery.nearestSettlement).toMatchObject({ name: "Biak", detail: "Indonésia", distanceReference: "costa" });
-    expect(discovery.imageSearch.map((term) => term.title)).toEqual(["Biak", "Indonésia"]);
+    expect(discovery.imageSearch.map((term) => term.title)).toEqual(["Biak", "Indonésia", "Oceano Pacífico"]);
   });
 
   it("builds a land discovery without a nearest-land section", () => {
@@ -58,5 +58,39 @@ describe("buildDiscovery", () => {
     const discovery = buildDiscovery(sparseOceanJob, null);
     expect(discovery).toMatchObject({ kind: "ocean", title: "Oceano", nearestLand: null, nearestSettlement: null, imageSearch: [] });
     expect(JSON.stringify(discovery)).not.toContain("undefined");
+  });
+
+  it("prioritizes ocean image context and removes duplicate fallback terms", () => {
+    const destination = oceanJob.destination!;
+    const discovery = buildDiscovery({
+      ...oceanJob,
+      destination: {
+        ...destination,
+        nearest_place: {
+          name: "Jayapura",
+          country: "Indonésia",
+          coordinates: { latitude: -2.53, longitude: 140.72 },
+          distance_km: 610,
+        },
+        nearest_land: {
+          ...destination.nearest_land!,
+          country: { name: "Papua", iso_a2: null, iso_a3: null },
+          nearest_place: {
+            name: "Biak",
+            country: "Papua",
+            coordinates: { latitude: -1.18, longitude: 136.08 },
+            distance_km: 52.4,
+          },
+        },
+      },
+      destination_label: "Oceano Pacífico",
+    }, null);
+
+    expect(discovery?.imageSearch.map((term) => term.title)).toEqual([
+      "Jayapura",
+      "Biak",
+      "Papua",
+      "Oceano Pacífico",
+    ]);
   });
 });

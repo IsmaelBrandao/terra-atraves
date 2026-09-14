@@ -85,28 +85,29 @@ describe("DiscoveryModal", () => {
   it("shows the ocean sections: direct destination, nearest land and settlement", () => {
     renderModal(ocean);
     const dialog = screen.getByRole("dialog");
-    const facts = within(dialog.querySelector<HTMLElement>(".discovery-facts")!);
-    expect(facts.getByText("Destino direto")).toBeVisible();
+    expect(within(dialog).getByText("Seu ponto de saída fica em pleno oceano. Indonésia é a terra firme mais próxima, a aproximadamente 480 km.")).toBeVisible();
+    const facts = within(dialog.querySelector<HTMLElement>(".discovery-nearby")!);
     expect(facts.getByText("Terra firme mais próxima")).toBeVisible();
     expect(facts.getByText("Localidade habitada próxima")).toBeVisible();
-    expect(facts.getByText("480 km do antípoda")).toBeVisible();
+    expect(facts.getByText("480 km do ponto de saída")).toBeVisible();
     expect(facts.getByText("52 km da costa mais próxima")).toBeVisible();
+    expect(facts.queryByText(/[−-]?\d+[,.]\d+°/)).toBeNull();
     expect(dialog.textContent).not.toMatch(/null|undefined/);
   });
 
   it("adapts to land results without a nearest-land section", () => {
     renderModal(land);
     const dialog = screen.getByRole("dialog", { name: "Fortaleza" });
-    expect(within(dialog).getByText("País")).toBeVisible();
-    expect(within(dialog).getByText("Estado / província")).toBeVisible();
+    expect(within(dialog).getByText("Você atravessaria o planeta e sairia em terra firme: Fortaleza, Ceará, Brasil.")).toBeVisible();
+    expect(dialog.querySelector(".discovery-nearby")).toBeNull();
     expect(within(dialog).queryByText("Terra firme mais próxima")).toBeNull();
-    expect(within(dialog).queryByText("Destino direto")).toBeNull();
   });
 
   it("writes missing fields in human language", () => {
     renderModal(buildDiscovery(sparseOceanJob, null)!);
     const dialog = screen.getByRole("dialog", { name: "Oceano" });
-    expect(within(dialog).getByText("Não identificada nesta consulta")).toBeVisible();
+    expect(within(dialog).getByText("Seu ponto de saída fica em pleno oceano, sem terra firme identificada nesta consulta.")).toBeVisible();
+    expect(dialog.querySelector(".discovery-nearby")).toBeNull();
     expect(dialog.textContent).not.toMatch(/null|undefined|NaN/);
   });
 
@@ -156,12 +157,14 @@ describe("DiscoveryModal", () => {
 
   it("expands the calculation walkthrough", () => {
     renderModal(ocean);
-    const details = screen.getByText("Como calculamos?").closest("details")!;
+    const details = screen.getByText("Detalhes geográficos").closest("details")!;
     expect(details.open).toBe(false);
-    fireEvent.click(screen.getByText("Como calculamos?"));
+    fireEvent.click(screen.getByText("Detalhes geográficos"));
     details.open = true;
     expect(within(details).getByText("Latitude invertida")).toBeInTheDocument();
     expect(within(details).getByText("Longitude deslocada em 180°")).toBeInTheDocument();
+    expect(within(details).getByText("Fonte dos dados")).toBeInTheDocument();
+    expect(details.textContent).toContain("3,9000°, 140,1000°");
     expect(details.textContent).toContain("−38,5267° + 180° = 141,4733°");
     expect(details.textContent).not.toMatch(/SELECT|ST_/);
   });
@@ -172,6 +175,7 @@ describe("DiscoveryModal", () => {
     const image = await screen.findByAltText(/Fotografia de Biak/);
     expect(image).toHaveAttribute("loading", "lazy");
     fireEvent.load(image);
+    expect(await screen.findByText("Região próxima: Biak")).toBeVisible();
     expect(await screen.findByText("Foto: Nomad")).toBeVisible();
     expect(screen.getByRole("link", { name: "CC BY 2.5" })).toHaveAttribute("href", photo.licenseUrl);
     expect(screen.getByRole("link", { name: "Wikimedia Commons" })).toHaveAttribute("href", photo.sourceUrl);

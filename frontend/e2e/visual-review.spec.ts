@@ -47,13 +47,13 @@ test.describe("@visual review captures", () => {
     const ocean = await settleDiscovery(page);
     await page.screenshot({ path: `${OUT}/05-result-ocean.png` });
 
-    await ocean.getByText("Como calculamos?").click();
+    await ocean.getByText("Detalhes geográficos").click();
     await ocean.locator(".calculation").scrollIntoViewIfNeeded();
     await page.waitForTimeout(400);
     await page.screenshot({ path: `${OUT}/07-result-details-expanded.png` });
 
     await ocean.locator(".discovery-body").evaluate((element) => element.scrollTo(0, 0));
-    await ocean.getByText("Como calculamos?").click();
+    await ocean.getByText("Detalhes geográficos").click();
     await ocean.getByRole("button", { name: "Compartilhar" }).click();
     await expect(ocean.getByRole("button", { name: "Copiar link" })).toBeVisible();
     await page.waitForTimeout(400);

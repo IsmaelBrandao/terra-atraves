@@ -13,7 +13,7 @@ export function CalculationDetails({ discovery }: { discovery: Discovery }) {
   return (
     <details className="calculation">
       <summary className="calculation__summary">
-        <span>Como calculamos?</span>
+        <span>Detalhes geográficos</span>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </summary>
       <ol className="calculation__steps">
@@ -54,15 +54,40 @@ export function CalculationDetails({ discovery }: { discovery: Discovery }) {
         {discovery.kind === "ocean" && discovery.nearestLand?.distanceKm != null && (
           <li>
             <span className="calculation__label">Terra firme mais próxima</span>
+            {discovery.nearestLand.coordinates && (
+              <span className="calculation__value">
+                {signed(discovery.nearestLand.coordinates.latitude)}, {signed(discovery.nearestLand.coordinates.longitude)}
+              </span>
+            )}
             <span className="calculation__note">
-              Uma busca espacial encontrou o litoral mais próximo e mediu a distância sobre a superfície da Terra:{" "}
-              {formatKilometers(discovery.nearestLand.distanceKm)}.
+              {discovery.nearestLand.name}. Uma busca espacial encontrou o litoral mais próximo e mediu{" "}
+              {formatKilometers(discovery.nearestLand.distanceKm)} sobre a superfície da Terra.
+            </span>
+          </li>
+        )}
+        {discovery.kind === "ocean" && discovery.nearestSettlement && (
+          <li>
+            <span className="calculation__label">Localidade habitada próxima</span>
+            {discovery.nearestSettlement.coordinates && (
+              <span className="calculation__value">
+                {signed(discovery.nearestSettlement.coordinates.latitude)}, {signed(discovery.nearestSettlement.coordinates.longitude)}
+              </span>
+            )}
+            <span className="calculation__note">
+              {discovery.nearestSettlement.name}
+              {discovery.nearestSettlement.detail ? `, ${discovery.nearestSettlement.detail}` : ""}
+              {discovery.nearestSettlement.distanceKm != null
+                ? `, a ${formatKilometers(discovery.nearestSettlement.distanceKm)} ${
+                    discovery.nearestSettlement.distanceReference === "costa" ? "da costa mais próxima" : "do ponto de saída"
+                  }.`
+                : "."}
             </span>
           </li>
         )}
         {discovery.kind === "land" && (discovery.country || discovery.state) && (
           <li>
             <span className="calculation__label">Região</span>
+            <span className="calculation__value">{[discovery.state, discovery.country].filter(Boolean).join(", ")}</span>
             <span className="calculation__note">País e estado vêm do cruzamento do ponto com os limites administrativos do Natural Earth.</span>
           </li>
         )}
@@ -71,6 +96,12 @@ export function CalculationDetails({ discovery }: { discovery: Discovery }) {
           <span className="calculation__note">
             A linha reta entre dois pontos opostos passa pelo centro do planeta: é o diâmetro médio, cerca de{" "}
             {formatKilometers(discovery.throughEarthKm)}.
+          </span>
+        </li>
+        <li>
+          <span className="calculation__label">Fonte dos dados</span>
+          <span className="calculation__note">
+            Classificação de terra e limites administrativos: Natural Earth, processados espacialmente pelo PostGIS.
           </span>
         </li>
       </ol>

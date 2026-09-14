@@ -21,7 +21,7 @@ export function DestinationImage({ discovery, enabled, provider }: DestinationIm
   const isContextImage = discovery.kind === "ocean" || data?.subject !== discovery.title;
   const alt = data
     ? discovery.kind === "ocean"
-      ? `Fotografia de ${data.subject}, referência de terra firme próxima ao antípoda`
+      ? `Fotografia de ${data.subject}, região próxima ao ponto oceânico do antípoda`
       : `Fotografia de ${data.subject}, região do antípoda`
     : "";
 
@@ -46,7 +46,7 @@ export function DestinationImage({ discovery, enabled, provider }: DestinationIm
         )}
         {showPhoto && status === "loaded" && isContextImage && (
           <span className="destination-media__tag">
-            {discovery.kind === "ocean" ? "Referência próxima" : "Região"} · {data.subject}
+            Região próxima: {data.subject}
           </span>
         )}
       </div>

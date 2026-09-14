@@ -13,6 +13,7 @@ test.describe("discovery modal", () => {
   test.setTimeout(120_000);
 
   test("ocean result: modal, image, calculation, sharing, close and reopen", async ({ page, context }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     // Desktop Chromium may or may not expose Web Share; force the fallback path deterministically.
     await page.addInitScript(() => {
@@ -41,8 +42,8 @@ test.describe("discovery modal", () => {
     await expect(dialog).toHaveAttribute("aria-modal", "true");
     await expect(dialog.getByText("Você chegou ao outro lado da Terra")).toBeVisible();
     await expect(dialog.getByText("≈ 12.742 km")).toBeVisible();
-    const facts = dialog.locator(".discovery-facts");
-    await expect(facts.getByText("Destino direto")).toBeVisible();
+    await expect(dialog.getByText(/Seu ponto de saída fica em pleno oceano/)).toBeVisible();
+    const facts = dialog.locator(".discovery-nearby");
     await expect(facts.getByText("Terra firme mais próxima")).toBeVisible();
     await expect(facts.getByText("Pequena ilha ou costa")).toBeVisible();
     await expect(facts.getByText("Localidade habitada próxima")).toBeVisible();
@@ -54,8 +55,9 @@ test.describe("discovery modal", () => {
     await expect(photo).toHaveAttribute("loading", "lazy");
     await expect(dialog.getByText("Foto: Fotógrafa de Teste")).toBeVisible();
     await expect(dialog.getByRole("link", { name: "Wikimedia Commons" })).toHaveAttribute("href", /commons\.wikimedia\.org/);
+    await page.screenshot({ path: "../output/playwright/discovery-refined-desktop-1920x1080.png" });
 
-    await dialog.getByText("Como calculamos?").click();
+    await dialog.getByText("Detalhes geográficos").click();
     await expect(dialog.getByText("Latitude invertida")).toBeVisible();
     await expect(dialog.getByText("−38,5267° + 180° = 141,4733°")).toBeVisible();
 
@@ -114,9 +116,10 @@ test.describe("discovery modal", () => {
 
     await expect(dialog).toHaveAccessibleName("Fortaleza");
     await expect(dialog.getByText("Ceará, Brasil").first()).toBeVisible();
-    await expect(dialog.locator(".discovery-facts").getByText("País")).toBeVisible();
-    await expect(dialog.locator(".discovery-facts").getByText("Estado / província")).toBeVisible();
-    await expect(dialog.locator(".discovery-facts").getByText("Terra firme mais próxima")).toHaveCount(0);
+    await expect(dialog.getByText("Você atravessaria o planeta e sairia em terra firme: Fortaleza, Ceará, Brasil.")).toBeVisible();
+    await expect(dialog.locator(".discovery-nearby")).toHaveCount(0);
+    await dialog.getByText("Detalhes geográficos").click();
+    await expect(dialog.getByText("Região")).toBeVisible();
     await expect(dialog.getByText("Local não identificado")).toHaveCount(0);
 
     await expect(dialog.locator(".destination-media")).toHaveAttribute("data-state", "fallback", { timeout: 10_000 });
@@ -151,6 +154,43 @@ test.describe("discovery modal", () => {
 
     const frame = await dialog.locator(".destination-media__frame").boundingBox();
     expect(frame!.width / frame!.height).toBeCloseTo(1.6, 1);
+
+    const photo = dialog.locator(".destination-media__photo");
+    await expect(photo).toHaveCSS("object-fit", "cover");
+    const mediaSizing = await dialog.locator(".destination-media__frame").evaluate((element) => {
+      const image = element.querySelector<HTMLImageElement>(".destination-media__photo")!;
+      return {
+        frameWidth: element.clientWidth,
+        frameHeight: element.clientHeight,
+        imageWidth: image.offsetWidth,
+        imageHeight: image.offsetHeight,
+      };
+    });
+    expect(mediaSizing.imageWidth).toBe(mediaSizing.frameWidth);
+    expect(mediaSizing.imageHeight).toBe(mediaSizing.frameHeight);
+
+    const imageTag = dialog.locator(".destination-media__tag");
+    await expect(imageTag).toHaveText("Região próxima: Jayapura");
+    const tagOverflow = await imageTag.evaluate((element) => ({
+      horizontal: element.scrollWidth - element.clientWidth,
+      vertical: element.scrollHeight - element.clientHeight,
+    }));
+    expect(tagOverflow.horizontal).toBeLessThanOrEqual(1);
+    expect(tagOverflow.vertical).toBeLessThanOrEqual(1);
+
+    const layoutOrder = await dialog.locator(".discovery-body > *").evaluateAll((elements) =>
+      elements.map((element) => element.getAttribute("class")),
+    );
+    expect(layoutOrder).toEqual(["discovery-hero", "discovery-route", "discovery-nearby", "calculation"]);
+
+    const actions = await dialog.locator(".discovery-actions").boundingBox();
+    expect(actions!.height).toBeLessThanOrEqual(214);
+    const globeButton = dialog.getByRole("button", { name: "Ver no globo" });
+    await expect(globeButton).toBeEnabled();
+    const globeButtonBackground = await globeButton.evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(globeButtonBackground).not.toBe("rgba(0, 0, 0, 0)");
+
+    await page.screenshot({ path: "../output/playwright/discovery-refined-mobile-360x800.png" });
 
     for (const name of ["Fechar descoberta", "Compartilhar", "Repetir perfuração", "Escolher outro local", "Ver no globo"]) {
       const button = await dialog.getByRole("button", { name, exact: true }).boundingBox();

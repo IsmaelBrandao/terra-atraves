@@ -24,7 +24,7 @@ interface CommonsImageInfo {
 const WIKI_LANGUAGES = ["pt", "en"] as const;
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 const THUMB_WIDTH = 1280;
-const MAX_TERMS = 3;
+const MAX_TERMS = 6;
 /** Page images that illustrate a subject poorly: flags, seals, locator maps and diagrams. */
 const UNSUITABLE_FILE =
   /(\.svg$|\.gif$|flag|bandeira|coat[_ ]of[_ ]arms|bras[aã]o|escudo|emblem|lambang|wappen|insignia|seal|selo|locator|localiza|mapa|[_ ]map[_. ]|logo)/i;

@@ -92,6 +92,28 @@ describe("createWikimediaImageProvider", () => {
     const fetcher = vi.fn(() => json({}, false));
     await expect(createWikimediaImageProvider(fetcher).findImage([biak])).resolves.toBeNull();
   });
+
+  it("reaches the regional and ocean fallbacks after the first three terms fail", async () => {
+    const fetcher = vi.fn((url: string) => {
+      const title = new URL(url).searchParams.get("titles");
+      if (title === "Oceano Pacífico" && url.startsWith("https://en.wikipedia.org")) {
+        return json({ query: { pages: [{ title: "Pacific Ocean", pageimage: "Pacific_coast.jpg" }] } });
+      }
+      if (title?.startsWith("File:")) return json(commonsBody);
+      return json({ query: { pages: [] } });
+    });
+
+    const image = await createWikimediaImageProvider(fetcher).findImage([
+      biak,
+      { title: "Referência costeira", near: null, maxDistanceKm: Infinity },
+      { title: "Região próxima", near: null, maxDistanceKm: Infinity },
+      { title: "Indonésia", near: null, maxDistanceKm: Infinity },
+      { title: "Oceano Pacífico", near: null, maxDistanceKm: Infinity },
+    ]);
+
+    expect(image?.subject).toBe("Pacific Ocean");
+    expect(fetcher.mock.calls.some(([url]) => url.includes("titles=Oceano+Pac%C3%ADfico"))).toBe(true);
+  });
 });
 
 describe("withImageCache", () => {
