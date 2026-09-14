@@ -1,3 +1,5 @@
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
 export interface GlobePerformanceProfile {
   isLowEnd: boolean;
   workerCount: number;
@@ -11,6 +13,7 @@ interface NavigatorWithMemory extends Navigator {
 let configured = false;
 
 interface MapLibrePerformanceApi {
+  setWorkerUrl: (url: string) => void;
   setWorkerCount: (count: number) => void;
   prewarm: () => void;
 }
@@ -34,6 +37,7 @@ export function configureMapLibreWorkers(
   maplibre: MapLibrePerformanceApi,
 ): void {
   if (configured) return;
+  maplibre.setWorkerUrl(maplibreWorkerUrl);
   maplibre.setWorkerCount(profile.workerCount);
   maplibre.prewarm();
   configured = true;

@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { detectGlobePerformance } from "./globe.performance";
+import { configureMapLibreWorkers, detectGlobePerformance } from "./globe.performance";
 
 function hardware(cores: number, memory?: number): Navigator & { deviceMemory?: number } {
   return { hardwareConcurrency: cores, deviceMemory: memory } as Navigator & {
@@ -23,5 +23,25 @@ describe("detectGlobePerformance", () => {
       workerCount: 4,
       pixelRatio: 1.5,
     });
+  });
+});
+
+describe("configureMapLibreWorkers", () => {
+  it("configures the bundled worker URL before prewarming MapLibre", () => {
+    const calls: string[] = [];
+    const maplibre = {
+      setWorkerUrl: vi.fn(() => calls.push("worker-url")),
+      setWorkerCount: vi.fn(() => calls.push("worker-count")),
+      prewarm: vi.fn(() => calls.push("prewarm")),
+    };
+
+    configureMapLibreWorkers(
+      { isLowEnd: false, workerCount: 4, pixelRatio: 1.5 },
+      maplibre,
+    );
+
+    expect(maplibre.setWorkerUrl).toHaveBeenCalledWith(expect.any(String));
+    expect(maplibre.setWorkerCount).toHaveBeenCalledWith(4);
+    expect(calls).toEqual(["worker-url", "worker-count", "prewarm"]);
   });
 });
