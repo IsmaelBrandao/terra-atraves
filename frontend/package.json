@@ -9,8 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "test:e2e": "playwright test --grep-invert @profile",
+    "test:e2e": "playwright test --grep-invert \"@profile|@visual\"",
     "test:profile": "playwright test --grep @profile",
+    "test:visual": "playwright test --grep @visual",
     "generate:api": "openapi-typescript openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {

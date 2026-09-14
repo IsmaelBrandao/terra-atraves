@@ -64,10 +64,10 @@ test("@profile measures warm-up, 10 cycles and 4x CPU", async ({ page, context }
   }, forceLowEnd);
   await page.goto("/");
   const canvas = page.locator(".maplibregl-canvas");
+  await expect(page.locator("main")).toHaveAttribute("data-map-status", "ready", { timeout: 20_000 });
   await expect(canvas).toBeVisible();
   await canvas.click({ position: { x: 640, y: 330 } });
   await expect(page.getByRole("heading", { name: "Fortaleza" })).toBeVisible();
-  await page.getByRole("button", { name: "Preparar perfuração" }).click();
   await expect(page.getByRole("button", { name: "CAVAR" })).toBeEnabled();
   await page.waitForTimeout(2_500);
 

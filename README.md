@@ -43,7 +43,8 @@ das migrations recorrentes.
 Backend: instale `backend/requirements-dev.txt`, então execute `ruff check .` e `pytest`.
 
 Frontend: execute `npm run lint`, `npm run typecheck`, `npm test` e `npm run test:e2e`.
-O perfil reproduzível, mais demorado, roda com `npm run test:profile`. Para atualizar os tipos
+O perfil reproduzível, mais demorado, roda com `npm run test:profile`; as capturas de revisão
+visual, com o backend real no ar, com `npm run test:visual`. Para atualizar os tipos
 da API, execute `python -m scripts.export_openapi` dentro de `backend` e depois
 `npm run generate:api` em `frontend`.
 
